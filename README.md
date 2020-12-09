@@ -8,3 +8,6 @@ wikipedia package can be installed with
 ```
 pip install wikipedia
 ```
+
+How to use:
+Run main.py from commandline
