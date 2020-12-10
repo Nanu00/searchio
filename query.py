@@ -7,7 +7,7 @@ class Query:
         if self.choice == False:
             result = wikipedia.search(self.articletitle) #Searches Wikipedia for query
             if len(result) == 0: #Checks if any results are found.
-                return f"No results found for '{self.articletitle}'."
+                return False
             else: return result
         else:
             while True:
@@ -20,8 +20,4 @@ class Query:
                     
 
     def articlescrape(self):
-        pagetitle = self.articletitle
-        if pagetitle == None: #Can pass search query string to search if needed
-            pagetitle = Query.searchwikipedia().split('https://en.wikipedia.org/wiki/')[1]
-            pass
-        return wikipedia.WikipediaPage(title=pagetitle)
+        return wikipedia.page(self.articletitle)
