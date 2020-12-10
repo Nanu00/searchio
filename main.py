@@ -22,26 +22,27 @@ async def on_message(message):
         brief='Search for a Wikipedia article'
     )
 async def search(ctx, *args):
-    if not args:
-        await ctx.send('Enter search query:')
+    if not args: #checks if search is empty
+        await ctx.send('Enter search query:') #if empty, asks user for search query
         try:
             userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
             userquery = userquery.content
         except asyncio.TimeoutError:
-            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
+            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
     else: 
-        userquery = ' '.join(args).strip()
+        userquery = ' '.join(args).strip() #turns multiword search into single string
     search = query.Query(userquery)
     while True:
         result = search.searchwikipedia()
-        if type(result) is list:
-            embed=discord.Embed(title=f"Titles matching '{search.articletitle}':", description=''.join([f'[{index}]: {value}\n' for index, value in enumerate(result)])) #1st 10 results
+        if type(result) is list: #creates a list of returned results
+            embed=discord.Embed(title=f"Titles matching '{search.articletitle}':", description=''.join([f'[{index}]: {value}\n' for index, value in enumerate(result)]))
+            embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
             await ctx.send('Please choose option')
             try:
                 input = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply 
                 input = int(input.content)
-                search.articletitle = result[input]
+                search.articletitle = result[input] #updates query to user choice
                 search.choice = True
                 continue
             except asyncio.TimeoutError:
@@ -52,11 +53,12 @@ async def search(ctx, *args):
                 pass
             continue
         elif result == False: 
-            await ctx.send(f"No results found for '{search.articletitle}'.")
+            await ctx.send(f"No results found for '{search.articletitle}'.") #triggered when no results are found
             break
         else:
             summary = result.summary[:result.summary.find('. ')+1]
-            embed=discord.Embed(title=f'Wikipedia Article: {result.original_title}', description=summary, url=result.url)
+            embed=discord.Embed(title=f'Wikipedia Article: {result.original_title}', description=summary, url=result.url) #outputs wikipedia article
+            embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
             break
         
@@ -71,7 +73,7 @@ async def search(ctx, *args):
             --references : Returns a list of URLs of external links in the page
             --sections : Returns the table of contents of the page
             --summary : Returns a summary of the page""",
-        brief="Scrape info from a Wikipedia article (WIP)"
+        brief="Scrape info from a Wikipedia article"
     )
 
 async def scrape(ctx, *args):
@@ -111,6 +113,7 @@ async def scrape(ctx, *args):
 
     for key,value in output.items():
         embed = discord.Embed(title=key, description=value)
+        embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)
 
     # except:
@@ -127,7 +130,7 @@ async def scrape(ctx, *args):
         bn: বাংলা \n
         ru: русский \n
         """,
-        brief="List supported languages"
+        brief="List supported languages (WIP)"
 )
 async def lang(ctx):
     result = query.Query(None)
