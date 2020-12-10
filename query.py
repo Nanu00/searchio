@@ -12,7 +12,7 @@ class Query:
         else:
             while True:
                 try:
-                    return wikipedia.page(title=self.articletitle)
+                    return wikipedia.WikipediaPage(title=self.articletitle)
                 except wikipedia.DisambiguationError as e: #If there is a disambiguation of search
                     e = str(e).split('\n')
                     e.pop(0)
@@ -21,3 +21,6 @@ class Query:
 
     def articlescrape(self):
         return wikipedia.page(self.articletitle)
+    
+    def languages(self):
+        return wikipedia.languages()
