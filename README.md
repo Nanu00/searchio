@@ -11,5 +11,7 @@ pip install python-dotenv
 ```
 
 How to use:
+
 Obtain Discord bot credentials, and place in .env file in the same directory as main.py
+
 Run main.py from commandline
