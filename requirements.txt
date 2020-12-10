@@ -11,7 +11,7 @@ discord.py==1.5.1
 idna==2.10
 multidict==4.7.6
 Pebble==4.5.3
-python-dotenv=0.15.0
+python-dotenv==0.15.0
 requests==2.25.0
 soupsieve==2.0.1
 termcolor==1.1.0
