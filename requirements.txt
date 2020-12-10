@@ -1,34 +1,21 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: win-64
-aiohttp=3.6.3=pypi_0
-async-timeout=3.0.1=pypi_0
-attrs=20.3.0=pypi_0
-beautifulsoup4=4.9.3=pyhb0f4dca_0
-ca-certificates=2020.12.5=h5b45459_0
-certifi=2020.12.5=py38haa244fe_0
-chardet=3.0.4=pypi_0
-click=7.1.2=pyh9f0ad1d_0
-colorama=0.4.4=pypi_0
-discord-py=1.5.1=pypi_0
-idna=2.10=pypi_0
-multidict=4.7.6=pypi_0
-openssl=1.1.1h=he774522_0
-pebble=4.5.3=pypi_0
-pip=20.3.1=py38haa95532_0
-python=3.8.5=h5fd99cc_1
-python-dotenv=0.15.0=pyhd8ed1ab_0
-python_abi=3.8=1_cp38
-requests=2.25.0=pypi_0
-setuptools=51.0.0=py38haa95532_2
-soupsieve=2.0.1=py_0
-sqlite=3.33.0=h2a8f88b_0
-termcolor=1.1.0=pypi_0
-urllib3=1.26.2=pypi_0
-vc=14.2=h21ff451_1
-vs2015_runtime=14.27.29016=h5e58377_2
-wheel=0.36.1=pyhd3eb1b0_0
-wikipedia=1.4.0=pypi_0
-wincertstore=0.2=py38_0
-yarl=1.5.1=pypi_0
-zlib=1.2.11=h62dcd97_4
+## The following requirements were added by pip freeze:
+aiohttp==3.6.3
+async-timeout==3.0.1
+attrs==20.3.0
+beautifulsoup4 @ file:///tmp/build/80754af9/beautifulsoup4_1601924105527/work
+certifi==2020.12.5
+chardet==3.0.4
+click==7.1.2
+colorama==0.4.4
+discord.py==1.5.1
+idna==2.10
+multidict==4.7.6
+Pebble==4.5.3
+python-dotenv @ file:///home/conda/feedstock_root/build_artifacts/python-dotenv_1603979006023/work
+requests==2.25.0
+soupsieve==2.0.1
+termcolor==1.1.0
+urllib3==1.26.2
+wikipedia==1.4.0
+wincertstore==0.2
+yarl==1.5.1
