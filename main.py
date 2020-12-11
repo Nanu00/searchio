@@ -47,11 +47,14 @@ async def search(ctx, *args):
                     embed.set_footer(text=f"Requested by {ctx.author}")
                     msg = await ctx.send(embed=embed)
                     await bot.wait_until_ready()
-                    if len(result) != 1:
-                        await msg.add_reaction('◀️')
-                        await msg.add_reaction('▶️')
+                    await msg.add_reaction('◀️')
+                    await msg.add_reaction('▶️')
                     await ctx.send('Please choose option')
-
+                else:
+                    embed=discord.Embed(title=f"Titles matching '{search.articletitle}':", description=
+                        ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[0])]))
+                    embed.set_footer(text=f"Requested by {ctx.author}")
+                    msg = await ctx.send(embed=embed)
                 def check(reaction, user):
                     return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
         
