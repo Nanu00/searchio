@@ -55,6 +55,7 @@ async def search(ctx, *args):
                         ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[0])]))
                     embed.set_footer(text=f"Requested by {ctx.author}")
                     msg = await ctx.send(embed=embed)
+                    await ctx.send('Please choose option')
                 def check(reaction, user):
                     return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
         
