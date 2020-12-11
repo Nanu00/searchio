@@ -21,7 +21,8 @@ async def on_ready():
 
 @bot.command(
         name = 'search',
-        help="Add a query after $search to search through the Wikipedia databases. Send 'cancel' to cancel search",
+        help="""Add a query after $search to search through the Wikipedia databases. Send 'cancel' to cancel search.\n
+            Multilanguage support with --lang followed by an ISO 3166 country code. See $lang for a full list of supported languages""",
         brief='Search for a Wikipedia article'
     )
 async def search(ctx, *args):
@@ -39,8 +40,13 @@ async def search(ctx, *args):
         except UserCancel:
             await ctx.send('Aborting')
     else: 
+        args = list(args)
+        language = 'en'
+        if '--lang' in args:
+            language = args[args.index('--lang')+1]
+            del args[args.index('--lang'):]
         userquery = ' '.join(args).strip() #turns multiword search into single string
-    search = query.Query(userquery)
+        search = query.Query(userquery, language)
     
     while True:
         try:
@@ -79,7 +85,7 @@ async def search(ctx, *args):
                             reaction, user = emojitask.result()
                             if str(reaction.emoji) == "▶️" and cur_page != pages:
                                 cur_page += 1
-                                embed=discord.Embed(title=f"Titles matching '{search.articletitle}'\n Page {cur_page}/{pages}:", description=
+                                embed=discord.Embed(title=f"Titles matching '{search.articletitle}'\nPage {cur_page}/{pages}:", description=
                                     ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
                                 embed.set_footer(text=f"Requested by {ctx.author}")
                                 await msg.edit(embed=embed)

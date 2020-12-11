@@ -1,8 +1,9 @@
 import wikipedia
 class Query:
-    def __init__(self, articletitle=None):
+    def __init__(self, articletitle=None, lang='en'):
         self.articletitle = articletitle
         self.choice = False
+        wikipedia.set_lang(lang)
     def searchwikipedia(self):
         if self.choice == False:
             result = wikipedia.search(self.articletitle) #Searches Wikipedia for query
