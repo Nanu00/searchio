@@ -18,17 +18,23 @@ async def on_message(message):
 
 @bot.command(
         name = 'search',
-        help='Add a query after $search to search through the Wikipedia databases. Follow the prompts!',
+        help="Add a query after $search to search through the Wikipedia databases. Send 'cancel' to cancel search",
         brief='Search for a Wikipedia article'
     )
 async def search(ctx, *args):
+    UserCancel = Exception
     if not args: #checks if search is empty
         await ctx.send('Enter search query:') #if empty, asks user for search query
         try:
             userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
             userquery = userquery.content
+            if userquery == 'cancel': raise UserCancel
+        
         except asyncio.TimeoutError:
             await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+        except UserCancel:
+            await ctx.send('Aborting')
     else: 
         userquery = ' '.join(args).strip() #turns multiword search into single string
     search = query.Query(userquery)
@@ -90,6 +96,8 @@ async def search(ctx, *args):
                                 # backwards on the first page
                         elif responsetask in done:
                             input = responsetask.result() 
+                            if input.content == 'cancel':
+                                raise UserCancel
                             input = int(input.content)
                             search.articletitle = result[cur_page-1][input] #updates query to user choice
                             search.choice = True
@@ -97,8 +105,10 @@ async def search(ctx, *args):
 
                     except asyncio.TimeoutError:
                         raise
+                    except UserCancel:
+                        raise
                     except:
-                        await ctx.send(f'Sorry, I did not understand that. Please pick a valid choice: 0 to {len(result)}')
+                        await ctx.send(f'Sorry, I did not understand that. Please pick a valid choice: 0 to {len(result[cur_page])}')
                         pass
                         continue
             
@@ -115,6 +125,10 @@ async def search(ctx, *args):
         
         except asyncio.TimeoutError:
             await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
+            break
+
+        except UserCancel:
+            await ctx.send('Aborting')
             break
     
     emojitask.cancel()
