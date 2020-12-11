@@ -15,6 +15,9 @@ bot = commands.Bot(command_prefix='$')
 async def on_message(message):
     if message.author == bot.user:
         return
+@bot.event
+async def on_ready():
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '$'"))
 
 @bot.command(
         name = 'search',
