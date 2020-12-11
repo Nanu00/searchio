@@ -20,7 +20,10 @@ class Query:
                     
 
     def articlescrape(self):
-        return wikipedia.page(self.articletitle)
+        try:
+            return wikipedia.WikipediaPage(title=self.articletitle)
+        except wikipedia.DisambiguationError:
+            raise
     
     def languages(self):
         return wikipedia.languages()
