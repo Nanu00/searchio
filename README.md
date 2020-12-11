@@ -1,13 +1,12 @@
 # wikipediasearch
 A Wikipedia article search engine implemented in Python
 
-Requires: wikipedia, dotenv
+See requirements.txt for required packages
 
 
-wikipedia package can be installed with
+Requirements can be installed with
 ```
-pip install wikipedia
-pip install python-dotenv
+pip install -r requirements.txt
 ```
 
 How to use:
