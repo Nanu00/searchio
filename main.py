@@ -1,4 +1,5 @@
 from discord import emoji
+from discord.ext.commands.core import command
 from discord.message import Message
 import query
 import discord
@@ -6,11 +7,60 @@ import os
 from dotenv import load_dotenv
 from discord.ext import commands
 import asyncio
+from datetime import datetime
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 bot = commands.Bot(command_prefix='$')
+logDict = {}
+class commandlog():
+    def __init__(self, ctx, command, *args):
+        self.ctx = ctx
+        self.command = command
+        self.args = args
+    
+    def appendToLog(self):
+        currentLogKey = datetime.utcnow().replace(microsecond=0)
+        logDict[currentLogKey.strftime("%y%m%d-%H%M%S")] = {
+            "Time": currentLogKey,
+            "Guild": self.ctx.guild.id,
+            "User": str(self.ctx.author),
+            "Command": self.command,
+            "Args": ' '.join(list(self.args)).strip()
+        }
+    
+        if len(logDict) > 50:
+            del logDict[min(logDict.keys())]
+
+        return
+    
+    def sendLog(ctx, isOwner:bool = False):
+        if len(logDict) > 50:
+            del logDict[min(logDict.keys())]
+
+        if isOwner == False:
+            embed=discord.Embed(title=f"Logs {datetime.utcnow().strftime('%y%m%d')}")
+            time = ""
+            user = ""
+            command = ""
+            args = ""
+
+            for values in logDict.values():
+                if values["Guild"] == ctx.guild.id and values["Time"].strftime("%y%m%d") == datetime.utcnow().strftime("%y%m%d"):
+                    time += f"{values['Time'].strftime('%H%M%S')}\n"
+                    user += f"{values['User']}\n"
+                    command += f"{values['Command']}\n"
+                    if values["Args"]:
+                        args += f"{values['Args']}\n"
+                    else: args += "\n"
+            
+            embed.add_field(name="Time", value=time, inline=True)
+            embed.add_field(name="User", value=user, inline=True)
+            embed.add_field(name="Command", value=command, inline=True)
+            embed.add_field(name="Args", value=args, inline=True)
+
+            return embed
 
 async def on_message(message):
     if message.author == bot.user:
@@ -27,6 +77,7 @@ async def on_ready():
     )
 async def search(ctx, *args):
     UserCancel = Exception
+
     if not args: #checks if search is empty
         await ctx.send('Enter search query:') #if empty, asks user for search query
         try:
@@ -47,7 +98,9 @@ async def search(ctx, *args):
             del args[args.index('--lang'):]
         userquery = ' '.join(args).strip() #turns multiword search into single string
         search = query.Query(userquery, language)
-    
+    log = commandlog(ctx, "search", userquery)
+    log.appendToLog()
+
     while True:
         try:
             result = search.searchwikipedia()
@@ -130,14 +183,20 @@ async def search(ctx, *args):
                 embed=discord.Embed(title=f'Wikipedia Article: {result.original_title}', description=summary, url=result.url) #outputs wikipedia article
                 embed.set_footer(text=f"Requested by {ctx.author}")
                 await ctx.send(embed=embed)
+                log = commandlog(ctx, "search result", f"{result.original_title}")
+                log.appendToLog()
                 break
         
         except asyncio.TimeoutError:
             await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
+            log = commandlog(ctx, "error", "timeout")
+            log.appendToLog()
             break
 
-        except UserCancel:
+        except UserCancel as e:
             await ctx.send('Aborting')
+            log = commandlog(ctx, "error", f"unknown/userabort: {e}")
+            log.appendToLog()
             break
     
     emojitask.cancel()
@@ -165,6 +224,7 @@ async def scrape(ctx, *args):
                 args = args.content
             except asyncio.TimeoutError:
                 await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
+                log.appendToLog(ctx, "error", "timeout")
         pagetitle = ''
         for value in args:
             if '--' not in value:
@@ -194,6 +254,9 @@ async def scrape(ctx, *args):
         if '--summary' in args:
             output['summary'] = str(result.summary) if len(result.summary) < 2000 else result.summary[:1997]+'...' #checks if summary is too long
 
+        log = commandlog(ctx, "scrape", args)
+        log.appendToLog()
+
         for key,value in output.items():
             embed = discord.Embed(title=key, description=value)
             embed.set_footer(text=f"Requested by {ctx.author}")
@@ -201,21 +264,25 @@ async def scrape(ctx, *args):
 
     except Exception as e:
         await ctx.send(f'Sorry, there is an error with processing your request.')
+        log = commandlog(ctx, "error", f"unknown/userabort: {e}")
+        log.appendToLog()
 
 @bot.command(
         name = 'lang',
-        help="""Lists Wikipedia's supported wikis in ISO codes. Common language codes are: \n
-        zh: 中文 \n
-        es: Español \n
-        en: English \n
-        pt: Português \n
-        hi: हिन्दी \n
-        bn: বাংলা \n
-        ru: русский \n
+        help="""Lists Wikipedia's supported wikis in ISO codes. Common language codes are:
+        zh: 中文
+        es: Español
+        en: English
+        pt: Português
+        hi: हिन्दी
+        bn: বাংলা
+        ru: русский
         """,
         brief="List supported languages (WIP)"
 )
 async def lang(ctx):
+    log = commandlog(ctx, "lang")
+    log.appendToLog()
     #Multiple page system
     result = query.Query(None)
     languages = list(result.languages().items())
@@ -262,5 +329,18 @@ async def lang(ctx):
         except asyncio.TimeoutError:
             await msg.delete()
             break
+
+@bot.command(
+        name = 'log'
         
+)
+@commands.is_owner()
+async def logging(ctx): 
+    await ctx.send(embed=commandlog.sendLog(ctx))
+    
+@logging.error
+async def logging_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        print(error)
+
 bot.run(DISCORD_TOKEN)
