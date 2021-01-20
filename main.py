@@ -178,7 +178,7 @@ async def search(ctx, *args):
             break
 
         except UserCancel as e:
-            await ctx.send('Aborting')
+            await ctx.send(f'Error: {e} \n Aborting.')
             log = commandlog(ctx, "error", f"unknown/userabort: {e}")
             log.appendToLog()
             break
