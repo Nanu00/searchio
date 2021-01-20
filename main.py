@@ -322,7 +322,7 @@ async def lang(ctx):
 async def logging(ctx): 
     log = commandlog(ctx, "log")
     log.appendToLog()
-    if ctx.author.id == bot.owner_id:
+    if ctx.author.id == 353233838094155778:
         dm = await ctx.author.create_dm()
         await dm.send(file=discord.File(r'logs.csv'))
     
