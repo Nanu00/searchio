@@ -7,13 +7,15 @@ import os
 from dotenv import load_dotenv
 from discord.ext import commands
 import asyncio
+import datetime as dt
 from datetime import datetime
+import csv
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 bot = commands.Bot(command_prefix='$')
-logDict = {}
+
 class commandlog():
     def __init__(self, ctx, command, *args):
         self.ctx = ctx
@@ -21,46 +23,28 @@ class commandlog():
         self.args = args
     
     def appendToLog(self):
-        currentLogKey = datetime.utcnow().replace(microsecond=0)
-        logDict[currentLogKey.strftime("%y%m%d-%H%M%S")] = {
-            "Time": currentLogKey,
+        logDict = {
+            "Time": datetime.utcnow().isoformat(),
             "Guild": self.ctx.guild.id,
-            "User": str(self.ctx.author),
+            "User": self.ctx.author.id,
             "Command": self.command,
             "Args": ' '.join(list(self.args)).strip()
         }
-    
-        if len(logDict) > 50:
-            del logDict[min(logDict.keys())]
-
+        lines = []
+        with open("logs.csv", "r+") as file:
+            for row in csv.DictReader(file):
+                logTime = datetime.fromisoformat(row["Time"])
+                if datetime.utcnow()-logTime < dt.timedelta(weeks=4):
+                    lines.append(row)
+        
+        with open("logs.csv", "w", newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=["Time", "Guild", "User", "Command", "Args"])
+            writer.writeheader()
+            for items in lines:
+                writer.writerow(items)
+            writer.writerow(logDict)              
         return
     
-    def sendLog(ctx, isOwner:bool = False):
-        if len(logDict) > 50:
-            del logDict[min(logDict.keys())]
-
-        if isOwner == False:
-            embed=discord.Embed(title=f"Logs {datetime.utcnow().strftime('%y%m%d')}")
-            time = ""
-            user = ""
-            command = ""
-            args = ""
-
-            for values in logDict.values():
-                if values["Guild"] == ctx.guild.id and values["Time"].strftime("%y%m%d") == datetime.utcnow().strftime("%y%m%d"):
-                    time += f"{values['Time'].strftime('%H%M%S')}\n"
-                    user += f"{values['User']}\n"
-                    command += f"{values['Command']}\n"
-                    if values["Args"]:
-                        args += f"{values['Args']}\n"
-                    else: args += "\n"
-            
-            embed.add_field(name="Time", value=time, inline=True)
-            embed.add_field(name="User", value=user, inline=True)
-            embed.add_field(name="Command", value=command, inline=True)
-            embed.add_field(name="Args", value=args, inline=True)
-
-            return embed
 
 async def on_message(message):
     if message.author == bot.user:
@@ -278,7 +262,7 @@ async def scrape(ctx, *args):
         bn: বাংলা
         ru: русский
         """,
-        brief="List supported languages (WIP)"
+        brief="Lists supported languages"
 )
 async def lang(ctx):
     log = commandlog(ctx, "lang")
@@ -331,16 +315,29 @@ async def lang(ctx):
             break
 
 @bot.command(
-        name = 'log'
-        
+        name='log',
+        help="DMs a .csv file of all the logs that the bot has for your username",
+        brief="DMs a .csv file of the logs"       
 )
-@commands.is_owner()
 async def logging(ctx): 
-    await ctx.send(embed=commandlog.sendLog(ctx))
+    log = commandlog(ctx, "log")
+    log.appendToLog()
+    if ctx.author.id == bot.owner_id:
+        dm = await ctx.author.create_dm()
+        await dm.send(file=discord.File(r'logs.csv'))
     
-@logging.error
-async def logging_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        print(error)
+    else:
+        open(f"{ctx.author.id}_personal_logs.csv", "w")
+        with open("logs.csv", 'r') as file: 
+            for line in csv.DictReader(file): 
+                if int(line["User"]) == ctx.author.id:
+                    with open(f"{ctx.author.id}_personal_logs.csv", "a+", newline='') as newFile:
+                        writer = csv.DictWriter(newFile, fieldnames=["Time", "Guild", "User", "Command", "Args"])
+                        writer.writerow(line)
+
+        dm = await ctx.author.create_dm()
+        await dm.send(file=discord.File(f"{ctx.author.id}_personal_logs.csv"))
+        
+        os.remove(f"{ctx.author.id}_personal_logs.csv")
 
 bot.run(DISCORD_TOKEN)
