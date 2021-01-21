@@ -4,3 +4,4 @@ env/
 __pycache__/
 startserver
 logs.csv
+.google-cookie
