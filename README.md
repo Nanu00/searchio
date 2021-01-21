@@ -16,7 +16,7 @@ Obtain Discord bot credentials, and place in .env file in the same directory as 
 Run main.py from commandline
 
 
-#To develop:
+# To develop:
   Create a pull request.
   All search modules are imported from ./src
   The modules each have the ability to send messages using discord.py.
