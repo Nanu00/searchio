@@ -1,5 +1,6 @@
 from src.wikipedia import WikipediaSearch
 from src.log import commandlog
+from src.google import GoogleSearch
 from discord import emoji
 from discord.ext.commands.core import command
 from discord.message import Message
@@ -33,7 +34,7 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
                 Multilanguage support with --lang followed by an ISO 3166 country code. See $lang for a full list of supported languages
                 Renamed from $search in preparation for more search functions""",
             brief='Search for a Wikipedia article.'
-        )
+    )
     async def wikisearch(self, ctx, *args):
         UserCancel = Exception
         language = "en"
@@ -81,6 +82,43 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
 
         await WikipediaSearch(bot, ctx, "en").lang()
 
+class GoogleCommands(commands.Cog, name="Google Search Commands"):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(
+            name = 'googlesearch',
+            help="""Add a query after $googlesearch to search through Google. Send 'cancel' to cancel search.
+                Multilanguage support with --lang followed by an ISO 3166 country code.""",
+            brief='Search Google.'
+    )
+    async def googlesearch(self, ctx, *args):
+        UserCancel = Exception
+        language = "en"
+        if not args: #checks if search is empty
+            await ctx.send('Enter search query:') #if empty, asks user for search query
+            try:
+                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                userquery = userquery.content
+                if userquery == 'cancel': raise UserCancel
+            
+            except asyncio.TimeoutError:
+                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+            except UserCancel:
+                await ctx.send('Aborting')
+        else: 
+            args = list(args)
+            if '--lang' in args:
+                language = args[args.index('--lang')+1]
+                del args[args.index('--lang'):]
+            userquery = ' '.join(args).strip() #turns multiword search into single string
+
+        log = commandlog(ctx, "googlesearch", userquery)
+        log.appendToLog()
+        
+        search = GoogleSearch(bot, ctx, language, userquery)
+        await search.search()
 
 @bot.command(
         name='log',
@@ -109,6 +147,7 @@ async def logging(ctx):
         
         os.remove(f"{ctx.author.id}_personal_logs.csv")
 
+
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
@@ -118,5 +157,6 @@ async def on_command_error(ctx, error):
             await ctx.send("Command not found")
 
 bot.add_cog(WikipediaCommands(bot))
+bot.add_cog(GoogleCommands(bot))
 
 bot.run(DISCORD_TOKEN)
