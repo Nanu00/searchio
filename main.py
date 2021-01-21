@@ -1,50 +1,20 @@
+from src.wikipedia import WikipediaSearch
+from src.log import commandlog
 from discord import emoji
 from discord.ext.commands.core import command
 from discord.message import Message
-import query
+from src.wikipedia import WikipediaSearch
 import discord
 import os
 from dotenv import load_dotenv
 from discord.ext import commands
 import asyncio
-import datetime as dt
-from datetime import datetime
 import csv
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 bot = commands.Bot(command_prefix='$')
-
-class commandlog():
-    def __init__(self, ctx, command, *args):
-        self.ctx = ctx
-        self.command = command
-        self.args = args
-    
-    def appendToLog(self):
-        logDict = {
-            "Time": datetime.utcnow().isoformat(),
-            "Guild": self.ctx.guild.id,
-            "User": self.ctx.author.id,
-            "Command": self.command,
-            "Args": ' '.join(list(self.args)).strip()
-        }
-        lines = []
-        with open("logs.csv", "r+") as file:
-            for row in csv.DictReader(file):
-                logTime = datetime.fromisoformat(row["Time"])
-                if datetime.utcnow()-logTime < dt.timedelta(weeks=4):
-                    lines.append(row)
-        
-        with open("logs.csv", "w", newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=["Time", "Guild", "User", "Command", "Args"])
-            writer.writeheader()
-            for items in lines:
-                writer.writerow(items)
-            writer.writerow(logDict)              
-        return
-    
 
 async def on_message(message):
     if message.author == bot.user:
@@ -53,272 +23,72 @@ async def on_message(message):
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '$'"))
 
-@bot.command(
-        name = 'search',
-        help="""Add a query after $search to search through the Wikipedia databases. Send 'cancel' to cancel search.\n
-            Multilanguage support with --lang followed by an ISO 3166 country code. See $lang for a full list of supported languages""",
-        brief='Search for a Wikipedia article'
-    )
-async def search(ctx, *args):
-    UserCancel = Exception
+class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
+    def __init__(self, bot):
+        self.bot = bot
 
-    if not args: #checks if search is empty
-        await ctx.send('Enter search query:') #if empty, asks user for search query
-        try:
-            userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-            userquery = userquery.content
-            if userquery == 'cancel': raise UserCancel
-        
-        except asyncio.TimeoutError:
-            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
-
-        except UserCancel:
-            await ctx.send('Aborting')
-    else: 
-        args = list(args)
-        language = 'en'
-        if '--lang' in args:
-            language = args[args.index('--lang')+1]
-            del args[args.index('--lang'):]
-        userquery = ' '.join(args).strip() #turns multiword search into single string
-        search = query.Query(userquery, language)
-    log = commandlog(ctx, "search", userquery)
-    log.appendToLog()
-
-    while True:
-        try:
-            result = search.searchwikipedia()
-            if type(result) is list: #creates a list of returned results
-                
-                result = [result[x:x+10] for x in range(0, len(result), 10)]
-                pages = len(result)
-                cur_page = 1
-                if len(result) != 1:
-                    embed=discord.Embed(title=f"Titles matching '{search.articletitle}'\n Page {cur_page}/{pages}:", description=
-                        ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
-                    embed.set_footer(text=f"Requested by {ctx.author}")
-                    msg = await ctx.send(embed=embed)
-                    await bot.wait_until_ready()
-                    await msg.add_reaction('◀️')
-                    await msg.add_reaction('▶️')
-                    await ctx.send('Please choose option')
-                else:
-                    embed=discord.Embed(title=f"Titles matching '{search.articletitle}':", description=
-                        ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[0])]))
-                    embed.set_footer(text=f"Requested by {ctx.author}")
-                    msg = await ctx.send(embed=embed)
-                    await ctx.send('Please choose option')
-                def check(reaction, user):
-                    return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
-        
-                while True:
-                    try: #checks for user input or reaction input.
-                        emojitask = asyncio.create_task(bot.wait_for("reaction_add", check=check, timeout=30))
-                        responsetask = asyncio.create_task(bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout=30))
-                        waiting = [emojitask,responsetask]
-                        done, waiting = await asyncio.wait(waiting, return_when=asyncio.FIRST_COMPLETED) # 30 seconds wait either reply or react
-                        
-                        if emojitask in done: # if reaction input, change page
-                            reaction, user = emojitask.result()
-                            if str(reaction.emoji) == "▶️" and cur_page != pages:
-                                cur_page += 1
-                                embed=discord.Embed(title=f"Titles matching '{search.articletitle}'\nPage {cur_page}/{pages}:", description=
-                                    ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
-                                embed.set_footer(text=f"Requested by {ctx.author}")
-                                await msg.edit(embed=embed)
-                                await msg.remove_reaction(reaction, user)
-                            
-                            elif str(reaction.emoji) == "◀️" and cur_page > 1:
-                                cur_page -= 1
-                                embed=discord.Embed(title=f"Titles matching '{search.articletitle}'\n Page {cur_page}/{pages}:", description=
-                                    ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
-                                embed.set_footer(text=f"Requested by {ctx.author}")
-                                await msg.edit(embed=embed)
-                                await msg.remove_reaction(reaction, user)
-                            
-                            else:
-                                await msg.remove_reaction(reaction, user)
-                                # removes reactions if the user tries to go forward on the last page or
-                                # backwards on the first page
-                        elif responsetask in done:
-                            input = responsetask.result() 
-                            if input.content == 'cancel':
-                                raise UserCancel
-                            input = int(input.content)
-                            search.articletitle = result[cur_page-1][input] #updates query to user choice
-                            search.choice = True
-                            break
-
-                    except asyncio.TimeoutError:
-                        raise
-                    except UserCancel:
-                        raise
-                    except:
-                        await ctx.send(f'Sorry, I did not understand that. Please pick a valid choice: 0 to {len(result[cur_page])}')
-                        pass
-                        continue
-            
-            elif result == False: 
-                await ctx.send(f"No results found for '{search.articletitle}'.") #triggered when no results are found
-                break
-
-            else:
-                summary = result.summary[:result.summary.find('. ')+1]
-                embed=discord.Embed(title=f'Wikipedia Article: {result.original_title}', description=summary, url=result.url) #outputs wikipedia article
-                embed.set_footer(text=f"Requested by {ctx.author}")
-                await ctx.send(embed=embed)
-                log = commandlog(ctx, "search result", f"{result.original_title}")
-                log.appendToLog()
-                break
-        
-        except asyncio.TimeoutError:
-            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
-            log = commandlog(ctx, "error", "timeout")
-            log.appendToLog()
-            break
-
-        except UserCancel as e:
-            await ctx.send(f'Error: {e} \n Aborting.')
-            log = commandlog(ctx, "error", f"unknown/userabort: {e}")
-            log.appendToLog()
-            break
-    
-    emojitask.cancel()
-        
-@bot.command(
-        name = 'scrape',
-        help=""" Command form: scrape <pagetitle> <arguments>
-            Arguments (multiple are accepted): \n 
-            --categories : Returns the categories that the page is a part of \n
-            --coordinates : Returns the coordinates of the object in the page (if applicable) in lat,long format \n
-            --images : Returns a list of URLs of the images on the page
-            --links : Returns a list of titles referenced by the page
-            --references : Returns a list of URLs of external links in the page
-            --sections : Returns the table of contents of the page
-            --summary : Returns a summary of the page""",
-        brief="Scrape info from a Wikipedia article"
-    )
-
-async def scrape(ctx, *args):
-    try:
-        if not args:
-            await ctx.send('Enter pagetitle and arguments:')
+    @commands.command(
+            name = 'wikisearch',
+            help="""Add a query after $wikisearch to search through the Wikipedia databases. Send 'cancel' to cancel search.
+                Multilanguage support with --lang followed by an ISO 3166 country code. See $lang for a full list of supported languages
+                Renamed from $search in preparation for more search functions""",
+            brief='Search for a Wikipedia article.'
+        )
+    async def wikisearch(self, ctx, *args):
+        UserCancel = Exception
+        language = "en"
+        if not args: #checks if search is empty
+            await ctx.send('Enter search query:') #if empty, asks user for search query
             try:
-                args = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                args = args.content
+                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                userquery = userquery.content
+                if userquery == 'cancel': raise UserCancel
+            
             except asyncio.TimeoutError:
-                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting')
-                log.appendToLog(ctx, "error", "timeout")
-        pagetitle = ''
-        for value in args:
-            if '--' not in value:
-                pagetitle += value + ' '
-            
-        scrape = query.Query(pagetitle.rstrip())
-        result = scrape.articlescrape()
-        output = {}
+                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
 
-        args = [value for value in args if '--' in value]
+            except UserCancel:
+                await ctx.send('Aborting')
+        else: 
+            args = list(args)
+            if '--lang' in args:
+                language = args[args.index('--lang')+1]
+                del args[args.index('--lang'):]
+            userquery = ' '.join(args).strip() #turns multiword search into single string
 
-        if '--categories' in args:
-            output['categories'] = ','.join(result.categories)
-        if '--coordinates' in args:
-            output['coordinates'] = ','.join(result.coordinates)
-        if '--images' in args:
-            try:
-                output['images'] = '\n'.join(result.images)
-            except Exception as e:
-                output['images'] = e
-        if '--links' in args:
-            output['links'] = '\n'.join(result.links)
-        if '--references' in args:
-            output['references'] = '\n'.join(result.references)
-        if '--sections' in args:
-            output['sections'] = "Wikipedia doesn't release sections at this time" #'\n'.join(result.sections)
-        if '--summary' in args:
-            output['summary'] = str(result.summary) if len(result.summary) < 2000 else result.summary[:1997]+'...' #checks if summary is too long
+        log = commandlog(ctx, "wikisearch", userquery)
+        log.appendToLog()
+        
+        search = WikipediaSearch(bot, ctx, language, userquery)
+        await search.search()
 
-        log = commandlog(ctx, "scrape", args)
+    @commands.command(
+            name = 'wikilang',
+            help="""Lists Wikipedia's supported wikis in ISO codes. Common language codes are:
+            zh: 中文
+            es: Español
+            en: English
+            pt: Português
+            hi: हिन्दी
+            bn: বাংলা
+            ru: русский
+            """,
+            brief="Lists supported languages"
+    )
+    async def wikilang(self, ctx):
+        log = commandlog(ctx, "wikilang")
         log.appendToLog()
 
-        for key,value in output.items():
-            embed = discord.Embed(title=key, description=value)
-            embed.set_footer(text=f"Requested by {ctx.author}")
-            await ctx.send(embed=embed)
+        search = WikipediaSearch(bot, ctx)
+        await search.lang() 
 
-    except Exception as e:
-        await ctx.send(f'Sorry, there is an error with processing your request.')
-        log = commandlog(ctx, "error", f"unknown/userabort: {e}")
-        log.appendToLog()
-
-@bot.command(
-        name = 'lang',
-        help="""Lists Wikipedia's supported wikis in ISO codes. Common language codes are:
-        zh: 中文
-        es: Español
-        en: English
-        pt: Português
-        hi: हिन्दी
-        bn: বাংলা
-        ru: русский
-        """,
-        brief="Lists supported languages"
-)
-async def lang(ctx):
-    log = commandlog(ctx, "lang")
-    log.appendToLog()
-    #Multiple page system
-    result = query.Query(None)
-    languages = list(result.languages().items())
-    languages = [languages[x:x+10] for x in range(0, len(languages), 10)]
-    for index1, content in enumerate(languages):
-        for index2, codes in enumerate(content):
-            content[index2] = ': '.join(codes) + '\n'
-        languages[index1] = ''.join([i for i in content])
-    pages = len(languages)
-    cur_page = 1
-    embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-    embed.set_footer(text=f"Requested by {ctx.author}")
-    msg = await ctx.send(embed=embed)
-    await bot.wait_until_ready()
-    await msg.add_reaction('◀️')
-    await msg.add_reaction('▶️')
-    
-    def check(reaction, user):
-        return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
-    
-    while True:
-        try:
-            reaction, user = await bot.wait_for("reaction_add", timeout=15, check=check)
-            # waiting for a reaction to be added - times out after 30 seconds
-
-            if str(reaction.emoji) == "▶️" and cur_page != pages:
-                cur_page += 1
-                embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-                embed.set_footer(text=f"Requested by {ctx.author}")
-                await msg.edit(embed=embed)
-                await msg.remove_reaction(reaction, user)
-            
-            elif str(reaction.emoji) == "◀️" and cur_page > 1:
-                cur_page -= 1
-                embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-                embed.set_footer(text=f"Requested by {ctx.author}")
-                await msg.edit(embed=embed)
-                await msg.remove_reaction(reaction, user)
-            
-            else:
-                await msg.remove_reaction(reaction, user)
-                # removes reactions if the user tries to go forward on the last page or
-                # backwards on the first page
-        except asyncio.TimeoutError:
-            await msg.delete()
-            break
 
 @bot.command(
         name='log',
         help="DMs a .csv file of all the logs that the bot has for your username",
         brief="DMs a .csv file of the logs"       
 )
+
 async def logging(ctx): 
     log = commandlog(ctx, "log")
     log.appendToLog()
@@ -339,5 +109,15 @@ async def logging(ctx):
         await dm.send(file=discord.File(f"{ctx.author.id}_personal_logs.csv"))
         
         os.remove(f"{ctx.author.id}_personal_logs.csv")
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, discord.ext.commands.errors.CommandNotFound):
+        if "search" in error.args[0]:
+            await ctx.send("$search is deprecated, use $wikisearch. Do $help search for more info")
+        else:
+            await ctx.send("Command not found")
+
+bot.add_cog(WikipediaCommands(bot))
 
 bot.run(DISCORD_TOKEN)
