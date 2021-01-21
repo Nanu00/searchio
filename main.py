@@ -79,8 +79,7 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         log = commandlog(ctx, "wikilang")
         log.appendToLog()
 
-        search = WikipediaSearch(bot, ctx)
-        await search.lang() 
+        await WikipediaSearch(bot, ctx, "en").lang()
 
 
 @bot.command(

@@ -23,15 +23,14 @@ class WikipediaSearch:
             result = [result[x:x+10] for x in range(0, len(result), 10)]
             pages = len(result)
             cur_page = 1
-            
             if len(result) != 1:
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}'\n Page {cur_page}/{pages}:", description=
                     ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 msg.append(await self.ctx.send(embed=embed))
                 await self.bot.wait_until_ready()
-                await msg[0].add_reaction('◀️')
-                await msg[0].add_reaction('▶️')
+                await msg[-1].add_reaction('◀️')
+                await msg[-1].add_reaction('▶️')
                 msg.append(await self.ctx.send('Please choose option'))
             
             else:
@@ -58,19 +57,19 @@ class WikipediaSearch:
                             embed=discord.Embed(title=f"Titles matching '{self.searchQuery}'\nPage {cur_page}/{pages}:", description=
                                 ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
                             embed.set_footer(text=f"Requested by {self.ctx.author}")
-                            await msg[0].edit(embed=embed)
-                            await msg[0].remove_reaction(reaction, user)
+                            await msg[-2].edit(embed=embed)
+                            await msg[-2].remove_reaction(reaction, user)
                         
                         elif str(reaction.emoji) == "◀️" and cur_page > 1:
                             cur_page -= 1
                             embed=discord.Embed(title=f"Titles matching '{self.searchQuery}'\n Page {cur_page}/{pages}:", description=
                                 ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
                             embed.set_footer(text=f"Requested by {self.ctx.author}")
-                            await msg[0].edit(embed=embed)
-                            await msg[0].remove_reaction(reaction, user)
+                            await msg[-2].edit(embed=embed)
+                            await msg[-2].remove_reaction(reaction, user)
                         
                         else:
-                            await msg[0].remove_reaction(reaction, user)
+                            await msg[-2].remove_reaction(reaction, user)
                             # removes reactions if the user tries to go forward on the last page or
                             # backwards on the first page
                     
@@ -83,7 +82,7 @@ class WikipediaSearch:
                         input = int(input.content)
                         try:
                             self.searchQuery = result[cur_page-1][input]
-                            page = wikipedia.page(self.searchQuery)
+                            page = wikipedia.WikipediaPage(title=self.searchQuery)
                             summary = page.summary[:page.summary.find('. ')+1]
                             embed=discord.Embed(title=f'Wikipedia Article: {page.original_title}', description=summary, url=page.url) #outputs wikipedia article
                             embed.set_footer(text=f"Requested by {self.ctx.author}")
@@ -95,6 +94,7 @@ class WikipediaSearch:
                             for message in msg:
                                 await message.delete()
 
+                            emojitask.cancel()
                             return
 
                         except wikipedia.DisambiguationError as e:
@@ -105,6 +105,7 @@ class WikipediaSearch:
                                 await message.delete()
 
                             break  
+
                 except UserCancel as e:
                     log = commandlog(self.ctx, "wikisearch cancel")
                     log.appendToLog()
@@ -113,6 +114,8 @@ class WikipediaSearch:
                         await message.delete()
 
                     await self.ctx.send(f"Cancelled")
+                    
+                    emojitask.cancel()
                     return
                 
                 except asyncio.TimeoutError:
@@ -123,6 +126,7 @@ class WikipediaSearch:
                     log.appendToLog()
 
                     await self.ctx.send(f"Search timed out. Aborting")
+                    emojitask.cancel()
                     return
 
                 except Exception as e:
@@ -134,9 +138,11 @@ class WikipediaSearch:
                     
                     if e:
                         await self.ctx.send(f"Error: {e}\nAborted.")
+                        emojitask.cancel()
                         return
                     else:
                         await self.ctx.send(f"Error: Unknown\nAborted.")
+                        emojitask.cancel()
                         return
 
     async def lang(self):
