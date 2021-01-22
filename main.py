@@ -15,14 +15,14 @@ import csv
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='\\')
 
 async def on_message(message):
     if message.author == bot.user:
         return
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '$'"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '\\'"))
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
     def __init__(self, bot):
