@@ -47,7 +47,7 @@ class WikipediaSearch:
                 msg.append(await self.ctx.send('Please choose option'))
 
             def check(reaction, user):
-                return user == self.ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
+                return user == self.ctx.author and str(reaction.emoji) in ["◀️", "▶️", "🗑️"]
 
             while True:
                 try: #checks for user input or reaction input.
@@ -92,16 +92,27 @@ class WikipediaSearch:
                             summary = page.summary[:page.summary.find('. ')+1]
                             embed=discord.Embed(title=f'Wikipedia Article: {page.original_title}', description=summary, url=page.url) #outputs wikipedia article
                             embed.set_footer(text=f"Requested by {self.ctx.author}")
-                            await self.ctx.send(embed=embed)
+                            searchresult = await self.ctx.send(embed=embed)
                             
                             log = commandlog(self.ctx, "wikisearch result", f"{page.original_title}")
                             log.appendToLog()
 
                             for message in msg:
                                 await message.delete()
-
-                            emojitask.cancel()
-                            return
+                            
+                            try:
+                                await searchresult.add_reaction('🗑️')
+                                reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
+                                if str(reaction.emoji) == '🗑️':
+                                    await searchresult.delete()
+                                    return
+                            
+                            except asyncio.TimeoutError as e: 
+                                await searchresult.delete()
+                            
+                            finally: 
+                                emojitask.cancel()
+                                return
 
                         except wikipedia.DisambiguationError as e:
                             result = str(e).split('\n')
@@ -120,9 +131,6 @@ class WikipediaSearch:
                         await message.delete()
 
                     await self.ctx.send(f"Cancelled")
-                    
-                    emojitask.cancel()
-                    return
                 
                 except asyncio.TimeoutError:
                     for message in msg:
@@ -132,8 +140,6 @@ class WikipediaSearch:
                     log.appendToLog()
 
                     await self.ctx.send(f"Search timed out. Aborting")
-                    emojitask.cancel()
-                    return
 
                 except Exception as e:
                     log = commandlog(self.ctx, "wikisearch error", f"{str(e)}")
@@ -144,12 +150,14 @@ class WikipediaSearch:
                     
                     if e:
                         await self.ctx.send(f"Error: {e}\nAborted.")
-                        emojitask.cancel()
-                        return
+
                     else:
                         await self.ctx.send(f"Error: Unknown\nAborted.")
-                        emojitask.cancel()
-                        return
+
+                
+                finally:
+                    emojitask.cancel()
+                    return
 
     async def lang(self):
         #Multiple page system
