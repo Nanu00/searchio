@@ -2,6 +2,7 @@ from src.wikipedia import WikipediaSearch
 from src.log import commandlog
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
+from src.googlereverseimages import ImageSearch
 import discord
 import os
 from dotenv import load_dotenv
@@ -185,6 +186,36 @@ async def sudo(ctx):
         #3) With great power comes great responsibility.
         """)
 
+@bot.command(
+        name='image',
+        help="",
+        brief=""       
+)
+async def image(ctx, *args):
+    UserCancel = Exception
+    if ctx.message.reference:
+        imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
+        if imagemsg.attachments:
+            userquery = imagemsg.attachments[0].url
+
+    elif not args: #checks if search is empty
+        await ctx.send('Enter search query:') #if empty, asks user for search query
+        try:
+            userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+            userquery = userquery.content
+            if userquery == 'cancel': raise UserCancel
+        
+        except asyncio.TimeoutError:
+            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+        except UserCancel:
+            await ctx.send('Aborting')
+    else: 
+        args = list(args)
+        userquery = ' '.join(args).strip() #turns multiword search into single string
+
+    search = ImageSearch(bot, ctx, userquery)
+    await search.search()
 
 @bot.event
 async def on_command_error(ctx, error):
