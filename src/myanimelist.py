@@ -17,7 +17,7 @@ class MyAnimeListSearch:
     
     async def search(self):
         msg = []
-        await asyncio.sleep(random.uniform(0,2))
+        await asyncio.sleep(random.uniform(0,1))
         search = AnimeSearch(self.searchQuery)
 
         log = commandlog(self.ctx, "animesearch", self.searchQuery)
