@@ -34,7 +34,7 @@ class ImageSearch:
         r = requests.get(#initial search
             f"https://www.google.com/searchbyimage?image_url={self.searchQuery}", 
             headers=headers)
-        
+
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "lxml")
             a = soup.find("a", text="All sizes")
@@ -44,6 +44,7 @@ class ImageSearch:
                     f"https://www.google.com/{a['href']}",
                     headers=headers
                 )
+                
                 soup = BeautifulSoup(r.text, "lxml")
                 div = soup.find("div", attrs={'id':'is-results'})
                 children = div.findChildren("img", recursive=True)

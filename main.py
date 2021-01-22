@@ -114,6 +114,37 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         search = GoogleSearch(bot, ctx, language, userquery)
         await search.search()
 
+    @commands.command(
+        name='image',
+        help="Reads a user's reply for an image URL or takes in a URL as an arg",
+        brief="Reverse image search with a given URL arg or reply"       
+    )
+
+    async def image(self, ctx, *args):
+        UserCancel = Exception
+        if ctx.message.reference:
+            imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
+            if imagemsg.attachments:
+                userquery = imagemsg.attachments[0].url
+
+        elif not args: #checks if search is empty
+            await ctx.send('Enter search query:') #if empty, asks user for search query
+            try:
+                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                userquery = userquery.content
+                if userquery == 'cancel': raise UserCancel
+            
+            except asyncio.TimeoutError:
+                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+            except UserCancel:
+                await ctx.send('Aborting')
+        else: 
+            args = list(args)
+            userquery = ' '.join(args).strip() #turns multiword search into single string
+
+        search = ImageSearch(bot, ctx, userquery)
+        await search.search()
 class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -185,37 +216,6 @@ async def sudo(ctx):
         #2) Think before you type.
         #3) With great power comes great responsibility.
         """)
-
-@bot.command(
-        name='image',
-        help="",
-        brief=""       
-)
-async def image(ctx, *args):
-    UserCancel = Exception
-    if ctx.message.reference:
-        imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
-        if imagemsg.attachments:
-            userquery = imagemsg.attachments[0].url
-
-    elif not args: #checks if search is empty
-        await ctx.send('Enter search query:') #if empty, asks user for search query
-        try:
-            userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-            userquery = userquery.content
-            if userquery == 'cancel': raise UserCancel
-        
-        except asyncio.TimeoutError:
-            await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
-
-        except UserCancel:
-            await ctx.send('Aborting')
-    else: 
-        args = list(args)
-        userquery = ' '.join(args).strip() #turns multiword search into single string
-
-    search = ImageSearch(bot, ctx, userquery)
-    await search.search()
 
 @bot.event
 async def on_command_error(ctx, error):
