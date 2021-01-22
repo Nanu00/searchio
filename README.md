@@ -29,7 +29,7 @@ Run main.py from commandline
 
   * Each module is required to be hooked up to the logging system
   * The required instance variables are:
-    1. self.bot (Discord.py Bot object)
-    2. self.searchQuery (The user search query)
-    3. OPTIONAL: self.language (language switching)
-  * Any edits to main.py will be rejected. I will integrate the modules. Please have sufficient documentation for the module.
+    * self.bot (Discord.py Bot object)
+    * self.searchQuery (The user search query)
+    * OPTIONAL: self.language (language switching)
+  * **Any edits to main.py will be rejected.** I will integrate the modules. Please have sufficient documentation for the module.
