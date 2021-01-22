@@ -18,13 +18,8 @@ async def on_message(message):
     if message.author == bot.user:
         return
 @bot.event
-
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '\\'"))
-    user = discord.client.get_user(bot.owner_id())
-    dm = user.create_dm()
-    await dm.send("Ready")
-
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
     def __init__(self, bot):
@@ -152,11 +147,10 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
         help="DMs a .csv file of all the logs that the bot has for your username",
         brief="DMs a .csv file of the logs"       
 )
-
 async def logging(ctx): 
     log = commandlog(ctx, "log")
     log.appendToLog()
-    if ctx.author.id == bot.owner_id():
+    if await bot.is_owner(ctx.author):
         dm = await ctx.author.create_dm()
         await dm.send(file=discord.File(r'logs.csv'))
     
@@ -174,14 +168,14 @@ async def logging(ctx):
         
         os.remove(f"{ctx.author.id}_personal_logs.csv")
 
+
 @bot.command(
         name='sudo',
         help="",
         brief=""       
 )
-
-async def sudo(ctx): 
-    if ctx.author.id == bot.owner_id():
+async def sudo(ctx):
+    if await bot.is_owner(ctx.author):
         await ctx.send("""
         We trust you have received the usual lecture from the local System
         Administrator. It usually boils down to these three things:
@@ -190,7 +184,6 @@ async def sudo(ctx):
         #2) Think before you type.
         #3) With great power comes great responsibility.
         """)
-
 
 
 @bot.event
