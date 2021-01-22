@@ -190,12 +190,6 @@ async def sudo(ctx):
         #2) Think before you type.
         #3) With great power comes great responsibility.
         """)
-    
-    else:
-        # log = commandlog(ctx, "sudo", "unauthorised")
-        # log.appendToLog()
-
-        await ctx.send(f"{ctx.author.name} is not in the sudoers file.  This incident will be reported.")
 
 
 
