@@ -28,6 +28,11 @@ Run main.py from commandline
    https://github.com/ACEslava/wikipediasearch/blob/b6f1e54c185c3191a1496c817c27f5b59868dca9/src/wikipedia.py#L1-L17
 
   * Each module is required to be hooked up to the logging system
+    * This can be done via:
+    ```
+    log = commandlog(self.ctx, "command", "any optional args (ex: search term)")
+    log.appendToLog()
+    ```
   * The required instance variables are:
     * self.bot (Discord.py Bot object)
     * self.searchQuery (The user search query)
