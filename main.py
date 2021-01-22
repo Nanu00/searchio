@@ -21,6 +21,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 @bot.event
+
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '\\'"))
 
@@ -171,6 +172,30 @@ async def logging(ctx):
         await dm.send(file=discord.File(f"{ctx.author.id}_personal_logs.csv"))
         
         os.remove(f"{ctx.author.id}_personal_logs.csv")
+
+@bot.command(
+        name='sudo',
+        help="",
+        brief=""       
+)
+
+async def sudo(ctx): 
+    if ctx.author.id == 353233838094155778:
+        await ctx.send("""
+        We trust you have received the usual lecture from the local System
+        Administrator. It usually boils down to these three things:
+
+        #1) Respect the privacy of others.
+        #2) Think before you type.
+        #3) With great power comes great responsibility.
+        """)
+    
+    else:
+        # log = commandlog(ctx, "sudo", "unauthorised")
+        # log.appendToLog()
+
+        await ctx.send(f"{ctx.author.name} is not in the sudoers file.  This incident will be reported.")
+
 
 
 @bot.event
