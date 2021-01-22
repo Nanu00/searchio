@@ -1,37 +1,35 @@
-import wikipedia
+from mal import *
 import discord
 import asyncio
 from src.log import commandlog
-import random 
+import random
 
-class WikipediaSearch:
+class MyAnimeListSearch:
     def __init__(
         self,
         bot,
         ctx,
-        language,
         searchQuery = None):
 
         self.searchQuery = searchQuery
         self.bot = bot
         self.ctx = ctx
-        wikipedia.set_lang(language)
     
     async def search(self):
         msg = []
         await asyncio.sleep(random.uniform(0,2))
-        result = wikipedia.search(self.searchQuery)
+        search = AnimeSearch(self.searchQuery)
 
-        log = commandlog(self.ctx, "wikisearch", self.searchQuery)
+        log = commandlog(self.ctx, "animesearch", self.searchQuery)
         log.appendToLog()
 
         while True:
-            result = [result[x:x+10] for x in range(0, len(result), 10)]
+            result = [[anime for anime in search.results][x:x+10] for x in range(0, len([anime for anime in search.results]), 10)]
             pages = len(result)
             cur_page = 1
             if len(result) != 1:
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}'\n Page {cur_page}/{pages}:", description=
-                    ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
+                    ''.join([f'[{index}]: {value.title}\n' for index, value in enumerate(result[cur_page-1])]))
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 msg.append(await self.ctx.send(embed=embed))
                 await self.bot.wait_until_ready()
@@ -41,7 +39,7 @@ class WikipediaSearch:
             
             else:
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}':", description=
-                    ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[0])]))
+                    ''.join([f'[{index}]: {value.title}\n' for index, value in enumerate(result[0])]))
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 msg.append(await self.ctx.send(embed=embed))
                 msg.append(await self.ctx.send('Please choose option'))
@@ -86,34 +84,30 @@ class WikipediaSearch:
                         elif input.content not in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                             continue
                         input = int(input.content)
-                        try:
-                            self.searchQuery = result[cur_page-1][input]
-                            page = wikipedia.WikipediaPage(title=self.searchQuery)
-                            summary = page.summary[:page.summary.find('. ')+1]
-                            embed=discord.Embed(title=f'Wikipedia Article: {page.original_title}', description=summary, url=page.url) #outputs wikipedia article
-                            embed.set_footer(text=f"Requested by {self.ctx.author}")
-                            await self.ctx.send(embed=embed)
+                        animeItem = result[cur_page-1][input]
+                        
+                        embed=discord.Embed(title=f'{animeItem.title}', 
+                            description=animeItem.synopsis, 
+                            url=animeItem.url) #Myanimelist data
                             
-                            log = commandlog(self.ctx, "wikisearch result", f"{page.original_title}")
-                            log.appendToLog()
+                        embed.add_field(name="MyAnimeListID", value=animeItem.mal_id, inline=True)
+                        embed.add_field(name="Rating", value=animeItem.score, inline=True)
+                        embed.add_field(name="Episodes", value=animeItem.episodes, inline=True)
 
-                            for message in msg:
-                                await message.delete()
-
-                            emojitask.cancel()
-                            return
-
-                        except wikipedia.DisambiguationError as e:
-                            result = str(e).split('\n')
-                            result.pop(0)
-
-                            for message in msg:
-                                await message.delete()
-
-                            break  
-
+                        embed.set_thumbnail(url=animeItem.image_url)
+                        embed.set_footer(text=f"Requested by {self.ctx.author}")
+                        await self.ctx.send(embed=embed)
+                        
+                        log = commandlog(self.ctx, "animesearch result", animeItem.title )
+                        log.appendToLog()
+                        for message in msg:
+                            await message.delete()
+                        
+                        emojitask.cancel()
+                        return
+                
                 except UserCancel as e:
-                    log = commandlog(self.ctx, "wikisearch cancel")
+                    log = commandlog(self.ctx, "animesearch cancel")
                     log.appendToLog()
 
                     for message in msg:
@@ -128,7 +122,7 @@ class WikipediaSearch:
                     for message in msg:
                         await message.delete()
 
-                    log = commandlog(self.ctx, "wikisearch timeout")
+                    log = commandlog(self.ctx, "animesearch timeout")
                     log.appendToLog()
 
                     await self.ctx.send(f"Search timed out. Aborting")
@@ -136,7 +130,7 @@ class WikipediaSearch:
                     return
 
                 except Exception as e:
-                    log = commandlog(self.ctx, "wikisearch error", f"{str(e)}")
+                    log = commandlog(self.ctx, "animesearch error", f"{str(e)}")
                     log.appendToLog()
 
                     for message in msg:
@@ -150,53 +144,6 @@ class WikipediaSearch:
                         await self.ctx.send(f"Error: Unknown\nAborted.")
                         emojitask.cancel()
                         return
-
-    async def lang(self):
-        #Multiple page system
-        languages = list(wikipedia.languages().items())
-        languages = [languages[x:x+10] for x in range(0, len(languages), 10)]
-        for index1, content in enumerate(languages):
-            for index2, codes in enumerate(content):
-                content[index2] = ': '.join(codes) + '\n'
-            languages[index1] = ''.join([i for i in content])
-        pages = len(languages)
-        cur_page = 1
-        embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-        embed.set_footer(text=f"Requested by {self.ctx.author}")
-        msg = await self.ctx.send(embed=embed)
-        await self.bot.wait_until_ready()
-        await msg.add_reaction('◀️')
-        await msg.add_reaction('▶️')
-        
-        def check(reaction, user):
-            return user == self.ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
-        
-        while True:
-            try:
-                reaction, user = await self.bot.wait_for("reaction_add", timeout=15, check=check)
-                # waiting for a reaction to be added - times out after 30 seconds
-
-                if str(reaction.emoji) == "▶️" and cur_page != pages:
-                    cur_page += 1
-                    embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-                    embed.set_footer(text=f"Requested by {self.ctx.author}")
-                    await msg.edit(embed=embed)
-                    await msg.remove_reaction(reaction, user)
-                
-                elif str(reaction.emoji) == "◀️" and cur_page > 1:
-                    cur_page -= 1
-                    embed = discord.Embed(title=f'Page {cur_page}/{pages}', description=languages[cur_page-1])
-                    embed.set_footer(text=f"Requested by {self.ctx.author}")
-                    await msg.edit(embed=embed)
-                    await msg.remove_reaction(reaction, user)
-                
-                else:
-                    await msg.remove_reaction(reaction, user)
-                    # removes reactions if the user tries to go forward on the last page or
-                    # backwards on the first page
-            except asyncio.TimeoutError:
-                await msg.delete()
-                break
 
 class UserCancel(Exception):
     pass

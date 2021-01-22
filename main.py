@@ -1,10 +1,10 @@
 from src.wikipedia import WikipediaSearch
 from src.log import commandlog
 from src.google import GoogleSearch
+from src.myanimelist import MyAnimeListSearch
 from discord import emoji
 from discord.ext.commands.core import command
 from discord.message import Message
-from src.wikipedia import WikipediaSearch
 import discord
 import os
 from dotenv import load_dotenv
@@ -57,9 +57,6 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
                 del args[args.index('--lang'):]
             userquery = ' '.join(args).strip() #turns multiword search into single string
 
-        log = commandlog(ctx, "wikisearch", userquery)
-        log.appendToLog()
-        
         search = WikipediaSearch(bot, ctx, language, userquery)
         await search.search()
 
@@ -120,6 +117,35 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         search = GoogleSearch(bot, ctx, language, userquery)
         await search.search()
 
+class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(
+            name = 'animesearch',
+            help="""Add a query after $animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
+            brief='Search for an anime.'
+    )
+    async def animesearch(self, ctx, *args):
+        UserCancel = Exception
+        if not args: #checks if search is empty
+            await ctx.send('Enter search query:') #if empty, asks user for search query
+            try:
+                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                userquery = userquery.content
+                if userquery == 'cancel': raise UserCancel
+            
+            except asyncio.TimeoutError:
+                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+            except UserCancel:
+                await ctx.send('Aborting')
+        else: 
+            userquery = ' '.join(args).strip() #turns multiword search into single string
+        
+        search = MyAnimeListSearch(bot, ctx, userquery)
+        await search.search()
+
 @bot.command(
         name='log',
         help="DMs a .csv file of all the logs that the bot has for your username",
@@ -158,5 +184,6 @@ async def on_command_error(ctx, error):
 
 bot.add_cog(WikipediaCommands(bot))
 bot.add_cog(GoogleCommands(bot))
+bot.add_cog(MyAnimeListCommands(bot))
 
 bot.run(DISCORD_TOKEN)
