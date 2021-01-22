@@ -105,7 +105,7 @@ class MyAnimeListSearch:
                         
                         try:
                             await searchresult.add_reaction('🗑️')
-                            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=5)
+                            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
                             if str(reaction.emoji) == '🗑️':
                                 await searchresult.delete()
                                 return
