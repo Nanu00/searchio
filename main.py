@@ -30,8 +30,8 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
 
     @commands.command(
             name = 'wikisearch',
-            help="""Add a query after $wikisearch to search through the Wikipedia databases. Send 'cancel' to cancel search.
-                Multilanguage support with --lang followed by an ISO 3166 country code. See $lang for a full list of supported languages
+            help="""Add a query after \wikisearch to search through the Wikipedia databases. Send 'cancel' to cancel search.
+                Multilanguage support with --lang followed by an ISO 3166 country code. See \lang for a full list of supported languages
                 Renamed from $search in preparation for more search functions""",
             brief='Search for a Wikipedia article.'
     )
@@ -85,8 +85,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
 
     @commands.command(
             name = 'googlesearch',
-            help="""Add a query after $googlesearch to search through Google. Send 'cancel' to cancel search.
-                Multilanguage support with --lang followed by an ISO 3166 country code.""",
+            help="""Add a query after \googlesearch to search through Google. Send 'cancel' to cancel search.""",
             brief='Search Google.'
     )
     async def googlesearch(self, ctx, *args):
@@ -123,7 +122,7 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
 
     @commands.command(
             name = 'animesearch',
-            help="""Add a query after $animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
+            help="""Add a query after \animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
             brief='Search for an anime.'
     )
     async def animesearch(self, ctx, *args):
@@ -178,9 +177,9 @@ async def logging(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
         if "search" in error.args[0]:
-            await ctx.send("$search is deprecated, use $wikisearch. Do $help search for more info")
+            await ctx.send("\search is deprecated, use $wikisearch. Do \help search for more info")
         else:
-            await ctx.send("Command not found. Do $help for available commands")
+            await ctx.send("Command not found. Do \help for available commands")
 
 bot.add_cog(WikipediaCommands(bot))
 bot.add_cog(GoogleCommands(bot))
