@@ -37,7 +37,7 @@ class GoogleSearch:
             return
       
       except asyncio.TimeoutError as e: 
-         await result.delete()
+         await result.clear_reactions()
       
       finally: 
          return

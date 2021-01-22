@@ -111,7 +111,7 @@ class MyAnimeListSearch:
                                 return
                         
                         except asyncio.TimeoutError as e: 
-                            await searchresult.delete()
+                            await searchresult.clear_reactions()
                         
                         finally: 
                             emojitask.cancel()
