@@ -180,7 +180,7 @@ async def on_command_error(ctx, error):
         if "search" in error.args[0]:
             await ctx.send("$search is deprecated, use $wikisearch. Do $help search for more info")
         else:
-            await ctx.send("Command not found")
+            await ctx.send("Command not found. Do $help for available commands")
 
 bot.add_cog(WikipediaCommands(bot))
 bot.add_cog(GoogleCommands(bot))

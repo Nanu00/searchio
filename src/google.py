@@ -18,7 +18,7 @@ class GoogleSearch:
 
    async def search(self):
       embed=discord.Embed(title=f"Google Search Results for '{self.searchQuery}'", description =
-         ''.join([f"- {i} \n\n" for i in search(query=self.searchQuery, tld='com',lang=self.lang,num=5,stop=5,pause=1)])
+         ''.join([f"- {i} \n\n" for i in search(query=self.searchQuery, tld='com',lang=self.lang,num=5,stop=5,pause=1, safe="on")])
       )   
       embed.set_footer(text=f"Requested by {self.ctx.author}")
       await self.ctx.send(embed=embed)
