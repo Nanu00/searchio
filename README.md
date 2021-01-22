@@ -1,22 +1,21 @@
 # wikipediasearch
 A Wikipedia article search engine implemented in Python
 
-See requirements.txt for required packages
+##To use:
 
-
-Requirements can be installed with
+Install requirements with:
 ```
 pip install -r requirements.txt
 ```
 
-How to use:
+Obtain Discord bot credentials and place in a file named .env in the same directory as main.py 
 
-Obtain Discord bot credentials, and place in .env file in the same directory as main.py as `DISCORD_TOKEN`
+* Syntax: `DISCORD_TOKEN = [copy paste token]`
 
 Run main.py from commandline
 
 
-# To develop:
+## To develop:
   Create a pull request.
   
   All search modules are imported from ./src
