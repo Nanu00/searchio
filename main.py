@@ -85,11 +85,11 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         self.bot = bot
 
     @commands.command(
-            name = 'googlesearch',
-            help="""Add a query after \googlesearch to search through Google. Send 'cancel' to cancel search.""",
+            name = 'gsearch',
+            help="""Add a query after \gsearch to search through Google. Send 'cancel' to cancel search.""",
             brief='Search Google.'
     )
-    async def googlesearch(self, ctx, *args):
+    async def gsearch(self, ctx, *args):
         UserCancel = Exception
         language = "en"
         if not args: #checks if search is empty
