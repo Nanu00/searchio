@@ -2,9 +2,6 @@ from src.wikipedia import WikipediaSearch
 from src.log import commandlog
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
-from discord import emoji
-from discord.ext.commands.core import command
-from discord.message import Message
 import discord
 import os
 from dotenv import load_dotenv
@@ -24,6 +21,10 @@ async def on_message(message):
 
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '\\'"))
+    user = discord.client.get_user(bot.owner_id())
+    dm = user.create_dm()
+    await dm.send("Ready")
+
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
     def __init__(self, bot):
@@ -155,7 +156,7 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
 async def logging(ctx): 
     log = commandlog(ctx, "log")
     log.appendToLog()
-    if ctx.author.id == 353233838094155778:
+    if ctx.author.id == bot.owner_id():
         dm = await ctx.author.create_dm()
         await dm.send(file=discord.File(r'logs.csv'))
     
@@ -180,7 +181,7 @@ async def logging(ctx):
 )
 
 async def sudo(ctx): 
-    if ctx.author.id == 353233838094155778:
+    if ctx.author.id == bot.owner_id():
         await ctx.send("""
         We trust you have received the usual lecture from the local System
         Administrator. It usually boils down to these three things:
