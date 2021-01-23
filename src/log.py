@@ -9,9 +9,13 @@ class commandlog():
         self.args = args
     
     def appendToLog(self):
+        guild = "None"
+        if self.ctx.guild.id:
+            guild = self.ctx.guild.id
+        
         logDict = {
             "Time": datetime.utcnow().isoformat(),
-            "Guild": self.ctx.guild.id,
+            "Guild": guild,
             "User": self.ctx.author.id,
             "Command": self.command,
             "Args": ' '.join(list(self.args)).strip()
