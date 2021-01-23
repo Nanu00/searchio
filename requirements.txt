@@ -8,6 +8,7 @@ discord==1.0.1
 discord.py==1.6.0
 google==3.0.0
 idna==2.10
+lxml==4.6.2
 mal-api==0.3.7
 multidict==5.1.0
 python-dotenv==0.15.0
