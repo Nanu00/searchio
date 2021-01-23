@@ -76,7 +76,6 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         log.appendToLog()
 
         await WikipediaSearch(bot, ctx, "en").lang()
-
 class GoogleCommands(commands.Cog, name="Google Search Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -88,7 +87,6 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
     )
     async def gsearch(self, ctx, *args):
         UserCancel = Exception
-        language = "en"
         if not args: #checks if search is empty
             await ctx.send('Enter search query:') #if empty, asks user for search query
             try:
@@ -103,15 +101,9 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
                 await ctx.send('Aborting')
         else: 
             args = list(args)
-            if '--lang' in args:
-                language = args[args.index('--lang')+1]
-                del args[args.index('--lang'):]
             userquery = ' '.join(args).strip() #turns multiword search into single string
 
-        log = commandlog(ctx, "googlesearch", userquery)
-        log.appendToLog()
-        
-        search = GoogleSearch(bot, ctx, language, userquery)
+        search = GoogleSearch(bot, ctx, userquery)
         await search.search()
 
     @commands.command(
@@ -206,16 +198,28 @@ async def logging(ctx):
         help="",
         brief=""       
 )
-async def sudo(ctx):
+async def sudo(ctx, *args):
     if await bot.is_owner(ctx.author):
-        await ctx.send("""
-        We trust you have received the usual lecture from the local System
-        Administrator. It usually boils down to these three things:
+        if args:
+            args = list(args)
 
-        #1) Respect the privacy of others.
-        #2) Think before you type.
-        #3) With great power comes great responsibility.
-        """)
+            if args[0] == "say":
+                if "--channel" in args:
+                    channel = int(args[args.index("--channel")+1])
+                    channel = await bot.fetch_channel(channel)
+                    args.pop(args.index("--channel")+1)
+                    args.pop(args.index("--channel"))
+                    await channel.send(' '.join(args[1:]).strip())
+                else: await ctx.send(' '.join(args[1:]).strip())
+        else:
+            await ctx.send("""
+            We trust you have received the usual lecture from the local System
+            Administrator. It usually boils down to these three things:
+
+            #1) Respect the privacy of others.
+            #2) Think before you type.
+            #3) With great power comes great responsibility.
+            """)
 
 @bot.event
 async def on_command_error(ctx, error):

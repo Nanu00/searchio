@@ -17,13 +17,13 @@ class commandlog():
             "Args": ' '.join(list(self.args)).strip()
         }
         lines = []
-        with open("logs.csv", "r+") as file:
+        with open("logs.csv", "r+", encoding='utf-8-sig') as file:
             for row in csv.DictReader(file):
                 logTime = datetime.fromisoformat(row["Time"])
                 if datetime.utcnow()-logTime < dt.timedelta(weeks=4):
                     lines.append(row)
         
-        with open("logs.csv", "w", newline='') as file:
+        with open("logs.csv", "w", newline='', encoding='utf-8-sig') as file:
             writer = csv.DictWriter(file, fieldnames=["Time", "Guild", "User", "Command", "Args"])
             writer.writeheader()
             for items in lines:

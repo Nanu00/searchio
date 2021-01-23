@@ -4,14 +4,13 @@ import asyncio
 import discord
 import urllib3
 import re
-import time
+import random
 
 class GoogleSearch:
    def __init__(
       self,
       bot,
       ctx,
-      language,
       searchQuery = None):
 
       self.searchQuery = searchQuery
@@ -25,9 +24,16 @@ class GoogleSearch:
       log = commandlog(self.ctx, "googlesearch", self.searchQuery)
       log.appendToLog()
       
-      start=time.time()
       http = urllib3.PoolManager()
-      url = "https://google.com/search?q=" + self.searchQuery.replace(" ", "+") + "&hl=en-US&lr=lang_en"+"&uule=w+CAIQICIeRGV0cm9pdCxNaWNoaWdhbixVbml0ZWQgU3RhdGVz"
+      locales = [
+         "w+CAIQICILRGVsaGksSW5kaWE",
+         "w+CAIQICIXU2hhbmdoYWksU2hhbmdoYWksQ2hpbmE",
+         "w+CAIQICIfTmV3IFlvcmssTmV3IFlvcmssVW5pdGVkIFN0YXRlcw",
+         "w+CAIQICIZS29sa2F0YSxXZXN0IEJlbmdhbCxJbmRpYQ", 
+         "w+CAIQICIlUHJvdmluY2Ugb2YgQmFyY2Vsb25hLENhdGFsb25pYSxTcGFpbg",
+         "w+CAIQICIlR3JlYXRlciBMb25kb24sRW5nbGFuZCxVbml0ZWQgS2luZ2RvbQ"
+      ]
+      url = "https://google.com/search?pws=0&q=" + self.searchQuery.replace(" ", "+") + f"&uule={random.choice(locales)}"
       response = http.request('GET', url)
       soup = BeautifulSoup(response.data, features="lxml")
       result_number = 3
@@ -36,6 +42,8 @@ class GoogleSearch:
       breaklines = ["People also search for", "Episodes"]
       wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com "] # fuck shutterstock the filter doesn't even work atm
 
+      log = commandlog(self.ctx, "googlesearch results", url)
+      log.appendToLog()
 
       while any(map(lambda wrong_first_result: wrong_first_result in google_snippet_result.strings, wrong_first_results)):
          result_number+=1
@@ -55,7 +63,7 @@ class GoogleSearch:
          else:
             break
 
-      embed = discord.Embed(title="Search results for: "+self.searchQuery[:233] + ("..." if len(self.searchQuery) > 233 else ""), description = re.sub("\n\n+", "\n\n", printstring), color=16777214)
+      embed = discord.Embed(title="Search results for: "+self.searchQuery[:233] + ("..." if len(self.searchQuery) > 233 else ""), description = re.sub("\n\n+", "\n\n", printstring))
       print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
       image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result
       # image = google_snippet_result.find("a")
@@ -82,7 +90,7 @@ class GoogleSearch:
             link = re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0]
             print(" link: " + link)
             if "youtube" not in link:
-                  embed.url = link
+                  embed.add_field(name="Relevant Links", value=link)
             else:
                   print(" failed yt link found")
                   embed.add_field(name="sorry not all youtube links work (yet) :/", value="youtube links are a broken mess send help")
@@ -90,6 +98,7 @@ class GoogleSearch:
             print(" adding link failed")
       
       embed.set_footer(text=f"Requested by {self.ctx.author}")
+      embed.url = url
       searchresult = await self.ctx.send(embed=embed)
 
       try:
