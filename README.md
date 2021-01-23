@@ -1,7 +1,7 @@
 # wikipediasearch
 A Wikipedia article search engine implemented in Python
 
-##To use:
+## To use:
 
 Install requirements with:
 ```
