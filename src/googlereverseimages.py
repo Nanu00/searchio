@@ -53,7 +53,7 @@ class ImageSearch:
                     urls.append(child.parent.parent.nextSibling.attrs["href"])
 
                 embed=discord.Embed(title=f"Google Reverse Image Search", description =
-                    ''.join([f"- {i} \n\n" for i in urls])
+                    ''.join([f"{i} \n" for i in urls])
                 )   
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 embed.set_thumbnail(url=self.searchQuery)
