@@ -97,8 +97,13 @@ class WikipediaSearch:
                             log = commandlog(self.ctx, "wikisearch result", f"{page.original_title}")
                             log.appendToLog()
 
-                            for message in msg:
-                                await message.delete()
+                            try:
+                                for message in msg:
+                                    await message.delete()
+                            except:
+                                pass
+
+                            emojitask.cancel()
                             
                             try:
                                 await searchresult.add_reaction('🗑️')
@@ -111,16 +116,15 @@ class WikipediaSearch:
                                 await searchresult.clear_reactions()
                             
                             finally: 
-                                emojitask.cancel()
                                 return
 
                         except wikipedia.DisambiguationError as e:
                             result = str(e).split('\n')
                             result.pop(0)
 
-                            for message in msg:
+                            for index, message in enumerate(msg):
                                 await message.delete()
-
+                                msg.pop(index)
                             break  
 
                 except UserCancel as e:
@@ -131,6 +135,9 @@ class WikipediaSearch:
                         await message.delete()
 
                     await self.ctx.send(f"Cancelled")
+
+                    emojitask.cancel()
+                    return
                 
                 except asyncio.TimeoutError:
                     for message in msg:
@@ -140,6 +147,9 @@ class WikipediaSearch:
                     log.appendToLog()
 
                     await self.ctx.send(f"Search timed out. Aborting")
+                    
+                    emojitask.cancel()
+                    return
 
                 except Exception as e:
                     log = commandlog(self.ctx, "wikisearch error", f"{str(e)}")
@@ -153,11 +163,11 @@ class WikipediaSearch:
 
                     else:
                         await self.ctx.send(f"Error: Unknown\nAborted.")
-
-                
-                finally:
+                    
                     emojitask.cancel()
                     return
+
+                    
 
     async def lang(self):
         #Multiple page system

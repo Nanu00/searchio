@@ -4,7 +4,6 @@ import asyncio
 import discord
 import urllib3
 import re
-import random
 
 class GoogleSearch:
    def __init__(
@@ -21,19 +20,18 @@ class GoogleSearch:
       def check(reaction, user):
          return user == self.ctx.author and str(reaction.emoji) in ["🗑️"]
 
+      def linkUnicodeParse(link: str):
+         for linkIndex in [i for i, ltr in enumerate(link) if ltr == "%"]: #replaces Unicode codepoints w/ characters
+            character = chr(int(link[linkIndex+1:linkIndex+3], 16))
+            link = link[:linkIndex] + f'{character}  ' + link[linkIndex+3:]
+            
+         return link.replace(" ", "")
+
       log = commandlog(self.ctx, "googlesearch", self.searchQuery)
       log.appendToLog()
-      
+
       http = urllib3.PoolManager()
-      locales = [
-         "w+CAIQICILRGVsaGksSW5kaWE",
-         "w+CAIQICIXU2hhbmdoYWksU2hhbmdoYWksQ2hpbmE",
-         "w+CAIQICIfTmV3IFlvcmssTmV3IFlvcmssVW5pdGVkIFN0YXRlcw",
-         "w+CAIQICIZS29sa2F0YSxXZXN0IEJlbmdhbCxJbmRpYQ", 
-         "w+CAIQICIlUHJvdmluY2Ugb2YgQmFyY2Vsb25hLENhdGFsb25pYSxTcGFpbg",
-         "w+CAIQICIlR3JlYXRlciBMb25kb24sRW5nbGFuZCxVbml0ZWQgS2luZ2RvbQ"
-      ]
-      url = "https://google.com/search?pws=0&q=" + self.searchQuery.replace(" ", "+") + f"&uule={random.choice(locales)}"
+      url = "https://google.com/search?pws=0&q=" + self.searchQuery.replace(" ", "+") + f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1"
       response = http.request('GET', url)
       soup = BeautifulSoup(response.data, features="lxml")
       result_number = 3
@@ -49,9 +47,8 @@ class GoogleSearch:
          result_number+=1
          google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
 
-      divlist = [d for d in google_snippet_result.findAll('div') if not d.find('div')]
       printstring = ""
-      for div in divlist:  # makes the text portion of the message by finding all strings in the snippet + formatting
+      for div in [d for d in google_snippet_result.findAll('div') if not d.find('div')]:  # makes the text portion of the message by finding all strings in the snippet + formatting
          linestring = ""
          for string in div.stripped_strings:
             linestring += string + " "
@@ -70,7 +67,7 @@ class GoogleSearch:
       
       if image is not None:  # tries to add an image to the embed
          try:
-            imgurl = re.findall("(?<=imgurl=).*(?=&imgrefurl)", image.parent.parent["href"])[0]
+            imgurl = linkUnicodeParse(re.findall("(?<=imgurl=).*(?=&imgrefurl)", image.parent.parent["href"])[0])
             if "encrypted" in imgurl:
                   imgurl = re.findall("(?<=imgurl=).*(?=&imgrefurl)", google_snippet_result.findAll("img")[1].parent.parent["href"])[0]
             # imgurl = re.findall("(?<=\=).*(?=&imgrefurl)", image["href"])[0]
@@ -87,19 +84,20 @@ class GoogleSearch:
       if len(link_list) != 0:  # tries to add a link to the embed
          # this adds a broken link for youtube videos :/ no fix afaik so just don't send link when youtube
          try:
-            link = re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0]
+            link = linkUnicodeParse(re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0])
+
+            embed.add_field(name="Relevant Link", value=link)
             print(" link: " + link)
-            if "youtube" not in link:
-                  embed.add_field(name="Relevant Links", value=link)
-            else:
-                  print(" failed yt link found")
-                  embed.add_field(name="sorry not all youtube links work (yet) :/", value="youtube links are a broken mess send help")
+
          except:
             print(" adding link failed")
       
       embed.set_footer(text=f"Requested by {self.ctx.author}")
       embed.url = url
-      searchresult = await self.ctx.send(embed=embed)
+      try:
+         searchresult = await self.ctx.send(embed=embed)
+      except Exception as e:
+         print(e)
 
       try:
          await searchresult.add_reaction('🗑️')
@@ -113,3 +111,6 @@ class GoogleSearch:
       
       finally: 
          return
+
+class UserCancel(Exception):
+   pass
