@@ -38,7 +38,7 @@ class ImageSearch:
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "lxml")
             a = soup.find("a", text="All sizes")
-            await asyncio.sleep(random.uniform(0,1)) #prevent captcha
+            await asyncio.sleep(random.uniform(0,1)) #prevent captcha.
             if a:
                 r = requests.get( #similar images
                     f"https://www.google.com/{a['href']}",

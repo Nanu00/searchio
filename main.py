@@ -101,7 +101,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
                 await ctx.send('Aborting')
         else: 
             args = list(args)
-            userquery = ' '.join(args).strip() #turns multiword search into single string
+            userquery = ' '.join(args).strip() #turns multiword search into single string.
 
         search = GoogleSearch(bot, ctx, userquery)
         await search.search()

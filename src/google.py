@@ -62,7 +62,7 @@ class GoogleSearch:
 
       embed = discord.Embed(title="Search results for: "+self.searchQuery[:233] + ("..." if len(self.searchQuery) > 233 else ""), description = re.sub("\n\n+", "\n\n", printstring))
       print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
-      image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result
+      image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result.
       # image = google_snippet_result.find("a")
       
       if image is not None:  # tries to add an image to the embed
