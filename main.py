@@ -177,13 +177,10 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
         brief="DMs a .csv file of the logs"       
 )
 async def logging(ctx): 
-    try:
-        log = commandlog(ctx, "log")
-        log.appendToLog()
-        await log.logRequest(bot)
-        return
-    except Exception as e:
-        print(e)
+    log = commandlog(ctx, "log")
+    log.appendToLog()
+    await log.logRequest(bot)
+    return
 
 
 @bot.command(

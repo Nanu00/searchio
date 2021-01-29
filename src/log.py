@@ -38,8 +38,8 @@ class commandlog():
         return
     
     async def logRequest(self, bot):
-        if await bot.is_owner(ctx.author):
-            dm = await ctx.author.create_dm()
+        if await bot.is_owner(self.ctx.author):
+            dm = await self.ctx.author.create_dm()
             await dm.send(file=discord.File(r'logs.csv'))
     
         else:
@@ -56,6 +56,4 @@ class commandlog():
                 os.remove(f"{self.ctx.author.id}_personal_logs.csv")
             
             except Exception as e:
-                self.command = "log"
-                self.args = str(e)
-                self.appendToLog()
+                print(e)
