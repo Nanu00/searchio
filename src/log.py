@@ -43,16 +43,19 @@ class commandlog():
             await dm.send(file=discord.File(r'logs.csv'))
     
         else:
-            with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
-                for line in csv.DictReader(file): 
-                    if int(line["User"]) == self.ctx.author.id:
-                        with open(f"{self.ctx.author.id}_personal_logs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
-                            writer = csv.DictWriter(newFile, fieldnames=self.logFieldnames)
-                            try: 
+            try:
+                with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+                    for line in csv.DictReader(file): 
+                        if int(line["User"]) == self.ctx.author.id:
+                            with open(f"{self.ctx.author.id}_personal_logs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                                writer = csv.DictWriter(newFile, fieldnames=self.logFieldnames)
                                 writer.writerow(line)
-                            except Exception as e:
-                                print(e)
 
-            dm = await self.ctx.author.create_dm()
-            await dm.send(file=discord.File(f"{self.ctx.author.id}_personal_logs.csv"))
-            os.remove(f"{self.ctx.author.id}_personal_logs.csv")
+                dm = await self.ctx.author.create_dm()
+                await dm.send(file=discord.File(f"{self.ctx.author.id}_personal_logs.csv"))
+                os.remove(f"{self.ctx.author.id}_personal_logs.csv")
+            
+            except Exception as e:
+                self.command = "log"
+                self.args = str(e)
+                self.appendToLog()
