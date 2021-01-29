@@ -1,8 +1,9 @@
 import datetime as dt
 from datetime import datetime
-import csv
+import csv, os, discord, asyncio
 
 class commandlog():
+    logFieldnames = ["Time", "Guild", "User", "User_Plaintext", "Command", "Args"]
     def __init__(self, ctx, command, *args):
         self.ctx = ctx
         self.command = command
@@ -16,7 +17,8 @@ class commandlog():
         logDict = {
             "Time": datetime.utcnow().isoformat(),
             "Guild": guild,
-            "User": str(self.ctx.author),
+            "User": self.ctx.author.id,
+            "User_Plaintext": str(self.ctx.author),
             "Command": self.command,
             "Args": ' '.join(list(self.args)).strip()
         }
@@ -28,9 +30,29 @@ class commandlog():
                     lines.append(row)
         
         with open("logs.csv", "w", newline='', encoding='utf-8-sig') as file:
-            writer = csv.DictWriter(file, fieldnames=["Time", "Guild", "User", "Command", "Args"])
+            writer = csv.DictWriter(file, fieldnames=self.logFieldnames)
             writer.writeheader()
             for items in lines:
                 writer.writerow(items)
             writer.writerow(logDict)              
         return
+    
+    async def logRequest(self, bot):
+        if await bot.is_owner(ctx.author):
+            dm = await ctx.author.create_dm()
+            await dm.send(file=discord.File(r'logs.csv'))
+    
+        else:
+            with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+                for line in csv.DictReader(file): 
+                    if int(line["User"]) == self.ctx.author.id:
+                        with open(f"{self.ctx.author.id}_personal_logs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                            writer = csv.DictWriter(newFile, fieldnames=self.logFieldnames)
+                            try: 
+                                writer.writerow(line)
+                            except Exception as e:
+                                print(e)
+
+            dm = await self.ctx.author.create_dm()
+            await dm.send(file=discord.File(f"{self.ctx.author.id}_personal_logs.csv"))
+            os.remove(f"{self.ctx.author.id}_personal_logs.csv")

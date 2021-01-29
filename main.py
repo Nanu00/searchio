@@ -57,6 +57,7 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
 
         search = WikipediaSearch(bot, ctx, language, userquery)
         await search.search()
+        return
 
     @commands.command(
             name = 'wikilang',
@@ -76,6 +77,7 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         log.appendToLog()
 
         await WikipediaSearch(bot, ctx, "en").lang()
+        return
 class GoogleCommands(commands.Cog, name="Google Search Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -105,6 +107,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
 
         search = GoogleSearch(bot, ctx, userquery)
         await search.search()
+        return
 
     @commands.command(
         name='image',
@@ -137,6 +140,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
 
         search = ImageSearch(bot, ctx, userquery)
         await search.search()
+        return
 class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -165,6 +169,7 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
         
         search = MyAnimeListSearch(bot, ctx, userquery)
         await search.search()
+        return
 
 @bot.command(
         name='log',
@@ -174,23 +179,8 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
 async def logging(ctx): 
     log = commandlog(ctx, "log")
     log.appendToLog()
-    if await bot.is_owner(ctx.author):
-        dm = await ctx.author.create_dm()
-        await dm.send(file=discord.File(r'logs.csv'))
-    
-    else:
-        open(f"{ctx.author.id}_personal_logs.csv", "w")
-        with open("logs.csv", 'r') as file: 
-            for line in csv.DictReader(file): 
-                if int(line["User"]) == ctx.author.id:
-                    with open(f"{ctx.author.id}_personal_logs.csv", "a+", newline='') as newFile:
-                        writer = csv.DictWriter(newFile, fieldnames=["Time", "Guild", "User", "Command", "Args"])
-                        writer.writerow(line)
-
-        dm = await ctx.author.create_dm()
-        await dm.send(file=discord.File(f"{ctx.author.id}_personal_logs.csv"))
-        
-        os.remove(f"{ctx.author.id}_personal_logs.csv")
+    await log.logRequest(bot)
+    return
 
 
 @bot.command(
