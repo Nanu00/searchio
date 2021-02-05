@@ -20,7 +20,7 @@ async def on_message(message):
         return
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '\\'"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '>'"))
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
     def __init__(self, bot):
