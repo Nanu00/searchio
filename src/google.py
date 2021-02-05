@@ -38,7 +38,7 @@ class GoogleSearch:
       google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
 
       breaklines = ["People also search for", "Episodes"]
-      wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com "] # fuck shutterstock the filter doesn't even work atm
+      wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com ", "Related searches"] # fuck shutterstock the filter doesn't even work atm
 
       log = commandlog(self.ctx, "googlesearch results", url)
       log.appendToLog()
