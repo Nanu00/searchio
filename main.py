@@ -13,14 +13,14 @@ import csv
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-bot = commands.Bot(command_prefix='>')
+bot = commands.Bot(command_prefix='&')
 
 async def on_message(message):
     if message.author == bot.user:
         return
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '>'"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '&'"))
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
     def __init__(self, bot):
@@ -215,9 +215,9 @@ async def sudo(ctx, *args):
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
         if "search" in error.args[0]:
-            await ctx.send(">search is deprecated, use $wikisearch. Do >help search for more info")
+            await ctx.send("&search is deprecated, use &wikisearch. Do &help search for more info")
         else:
-            await ctx.send("Command not found. Do >help for available commands")
+            await ctx.send("Command not found. Do &help for available commands")
 
 bot.add_cog(WikipediaCommands(bot))
 bot.add_cog(GoogleCommands(bot))
