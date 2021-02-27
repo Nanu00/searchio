@@ -202,13 +202,15 @@ async def sudo(ctx, *args):
                 else: await ctx.send(' '.join(args[1:]).strip())
         else:
             await ctx.send("""
-            We trust you have received the usual lecture from the local System
-            Administrator. It usually boils down to these three things:
+            We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
 
             #1) Respect the privacy of others.
             #2) Think before you type.
             #3) With great power comes great responsibility.
             """)
+    
+    else:
+        await ctx.send(f"{ctx.author} is not in the sudoers file.  This incident will be reported.")
 
 @bot.event
 async def on_command_error(ctx, error):
