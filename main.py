@@ -3,6 +3,7 @@ from src.log import commandlog
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
+from src.sudo import Sudo
 import discord
 import os
 from dotenv import load_dotenv
@@ -188,27 +189,10 @@ async def logging(ctx):
         brief=""       
 )
 async def sudo(ctx, *args):
-    if await bot.is_owner(ctx.author):
-        if args:
-            args = list(args)
-
-            if args[0] == "say":
-                if "--channel" in args:
-                    channel = int(args[args.index("--channel")+1])
-                    channel = await bot.fetch_channel(channel)
-                    args.pop(args.index("--channel")+1)
-                    args.pop(args.index("--channel"))
-                    await channel.send(' '.join(args[1:]).strip())
-                else: await ctx.send(' '.join(args[1:]).strip())
-        else:
-            await ctx.send("""
-            We trust you have received the usual lecture from the local System
-            Administrator. It usually boils down to these three things:
-
-            #1) Respect the privacy of others.
-            #2) Think before you type.
-            #3) With great power comes great responsibility.
-            """)
+    args = list(args)
+    command = Sudo(bot, ctx)
+    await command.sudo(args)
+    return
 
 @bot.event
 async def on_command_error(ctx, error):
