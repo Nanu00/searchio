@@ -189,29 +189,10 @@ async def logging(ctx):
         brief=""       
 )
 async def sudo(ctx, *args):
-    if await bot.is_owner(ctx.author):
-        if args:
-            args = list(args)
-
-            if args[0] == "say":
-                if "--channel" in args:
-                    channel = int(args[args.index("--channel")+1])
-                    channel = await bot.fetch_channel(channel)
-                    args.pop(args.index("--channel")+1)
-                    args.pop(args.index("--channel"))
-                    await channel.send(' '.join(args[1:]).strip())
-                else: await ctx.send(' '.join(args[1:]).strip())
-        else:
-            await ctx.send("""
-            We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
-
-            #1) Respect the privacy of others.
-            #2) Think before you type.
-            #3) With great power comes great responsibility.
-            """)
-    
-    else:
-        await ctx.send(f"{ctx.author} is not in the sudoers file.  This incident will be reported.")
+    args = list(args)
+    command = Sudo(bot, ctx)
+    await command.sudo(args)
+    return
 
 @bot.event
 async def on_command_error(ctx, error):
