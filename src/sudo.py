@@ -41,12 +41,12 @@ class Sudo:
 
     async def say(self, args):
         isOwner = await self.bot.is_owner(self.ctx.author)
-        if isOwner == True:
+        if isOwner == True and "--channel" in args:
             channel = int(args[args.index("--channel")+1])
             channel = await self.bot.fetch_channel(channel)
-        else:
+        elif "--channel" in args:
             channel = int(args[args.index("--channel")+1]) #Prevents non-owner sudoers from using bot in other servers
-            channel = await self.guild.get_channel(channel)
+            channel = self.ctx.guild.get_channel(channel)
 
         if "--channel" in args:
                 args.pop(args.index("--channel")+1)
