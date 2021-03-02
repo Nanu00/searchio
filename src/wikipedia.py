@@ -19,11 +19,12 @@ class WikipediaSearch:
     
     async def search(self):
         msg = []
-        await asyncio.sleep(random.uniform(0,2))
-        result = wikipedia.search(self.searchQuery)
+        async with self.ctx.typing():
+            await asyncio.sleep(random.uniform(0,2))
+            result = wikipedia.search(self.searchQuery)
 
-        log = commandlog(self.ctx, "wikisearch", self.searchQuery)
-        log.appendToLog()
+            log = commandlog(self.ctx, "wikisearch", self.searchQuery)
+            log.appendToLog()
 
         while True:
             result = [result[x:x+10] for x in range(0, len(result), 10)]
@@ -81,6 +82,7 @@ class WikipediaSearch:
                     
                     elif responsetask in done:
                         input = responsetask.result() 
+                        await input.delete()
                         if input.content == 'cancel':
                             raise UserCancel
                         elif input.content not in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
