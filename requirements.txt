@@ -7,6 +7,7 @@ chardet==3.0.4
 discord==1.0.1
 discord.py==1.6.0
 google==3.0.0
+google-trans-new==1.1.9
 idna==2.10
 lxml==4.6.2
 mal-api==0.3.7

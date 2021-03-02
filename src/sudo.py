@@ -130,8 +130,15 @@ class Sudo:
                 await self.sudoer(args)
             elif args[0] == 'unsudoer':
                 await self.unsudoer(args)
+
+            if args:
+                log = commandlog(self.ctx, "sudo", ' '.join(args).strip())
+                log.appendToLog()
                 
-        else: await self.ctx.send(f"{self.ctx.author} is not in the sudoers file.  This incident will be reported.")
+        else: 
+            await self.ctx.send(f"{self.ctx.author} is not in the sudoers file.  This incident will be reported.")
+            log = commandlog(self.ctx, "sudo", 'unauthorised')
+            log.appendToLog()
 
         with open('serverSettings.json', 'w') as data:
             data.write(json.dumps(self.serverSettings, indent=4))

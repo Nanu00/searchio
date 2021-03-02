@@ -1,5 +1,6 @@
 from src.log import commandlog
 from bs4 import BeautifulSoup
+from google_trans_new import google_translator, LANGUAGES
 import asyncio
 import discord
 import urllib3
@@ -18,7 +19,7 @@ class GoogleSearch:
 
    async def search(self):
       def check(reaction, user):
-         return user == self.ctx.author and str(reaction.emoji) in ["🗑️"]
+         return user == self.ctx.author and str(reaction.emoji) in ["🔍", "🗑️"]
 
       def linkUnicodeParse(link: str):
          for linkIndex in [i for i, ltr in enumerate(link) if ltr == "%"]: #replaces Unicode codepoints w/ characters
@@ -29,6 +30,36 @@ class GoogleSearch:
 
       log = commandlog(self.ctx, "googlesearch", self.searchQuery)
       log.appendToLog()
+
+      if "translate" in self.searchQuery.lower():
+         query = self.searchQuery.lower().split(' ')
+         if len(query) > 1:
+            del query[0]
+            query = ' '.join(query)
+            translator = google_translator()
+            result = translator.translate(query)
+            
+            embed = discord.Embed(title=f"Translation {translator.detect(query)[1].capitalize()} > English", description = result + '\n\nReact with 🔍 to search Google')
+            embed.set_footer(text=f"Requested by {self.ctx.author}")
+            searchresult = await self.ctx.send(embed=embed)
+            try:
+               await searchresult.add_reaction('🗑️')
+               await searchresult.add_reaction('🔍')
+               reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
+               if str(reaction.emoji) == '🗑️':
+                  await searchresult.delete()
+                  return
+               
+               elif str(reaction.emoji) == '🔍':
+                  await searchresult.delete()
+                  pass
+            
+            except asyncio.TimeoutError as e: 
+               await searchresult.clear_reactions()
+               return
+            except Exception:
+               await searchresult.delete()
+               return
 
       http = urllib3.PoolManager()
       url = "https://google.com/search?pws=0&q=" + self.searchQuery.replace(" ", "+") + f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1"
