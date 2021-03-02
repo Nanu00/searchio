@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 from discord.ext import commands
 import asyncio
+import json
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -34,30 +35,40 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
             brief='Search for a Wikipedia article.'
     )
     async def wikisearch(self, ctx, *args):
-        UserCancel = Exception
-        language = "en"
-        if not args: #checks if search is empty
-            await ctx.send('Enter search query:') #if empty, asks user for search query
-            try:
-                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                userquery = userquery.content
-                if userquery == 'cancel': raise UserCancel
-            
-            except asyncio.TimeoutError:
-                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
 
-            except UserCancel:
-                await ctx.send('Aborting')
-        else: 
-            args = list(args)
-            if '--lang' in args:
-                language = args[args.index('--lang')+1]
-                del args[args.index('--lang'):]
-            userquery = ' '.join(args).strip() #turns multiword search into single string
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                UserCancel = Exception
+                language = "en"
+                if not args: #checks if search is empty
+                    await ctx.send('Enter search query:') #if empty, asks user for search query
+                    try:
+                        userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                        userquery = userquery.content
+                        if userquery == 'cancel': raise UserCancel
+                    
+                    except asyncio.TimeoutError:
+                        await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
 
-        search = WikipediaSearch(bot, ctx, language, userquery)
-        await search.search()
-        return
+                    except UserCancel:
+                        await ctx.send('Aborting')
+                else: 
+                    args = list(args)
+                    if '--lang' in args:
+                        language = args[args.index('--lang')+1]
+                        del args[args.index('--lang'):]
+                    userquery = ' '.join(args).strip() #turns multiword search into single string
+
+                search = WikipediaSearch(bot, ctx, language, userquery)
+                await search.search()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
 
     @commands.command(
             name = 'wikilang',
@@ -73,11 +84,21 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
             brief="Lists supported languages"
     )
     async def wikilang(self, ctx):
-        log = commandlog(ctx, "wikilang")
-        log.appendToLog()
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
 
-        await WikipediaSearch(bot, ctx, "en").lang()
-        return
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                log = commandlog(ctx, "wikilang")
+                log.appendToLog()
+
+                await WikipediaSearch(bot, ctx, "en").lang()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
 class GoogleCommands(commands.Cog, name="Google Search Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -89,25 +110,36 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
     )
     async def gsearch(self, ctx, *args):
         UserCancel = Exception
-        if not args: #checks if search is empty
-            await ctx.send('Enter search query:') #if empty, asks user for search query
-            try:
-                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                userquery = userquery.content
-                if userquery == 'cancel': raise UserCancel
-            
-            except asyncio.TimeoutError:
-                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
 
-            except UserCancel:
-                await ctx.send('Aborting')
-        else: 
-            args = list(args)
-            userquery = ' '.join(args).strip() #turns multiword search into single string.
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                if not args: #checks if search is empty
+                    await ctx.send('Enter search query:') #if empty, asks user for search query
+                    try:
+                        userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                        userquery = userquery.content
+                        if userquery == 'cancel': raise UserCancel
+                    
+                    except asyncio.TimeoutError:
+                        await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
 
-        search = GoogleSearch(bot, ctx, userquery)
-        await search.search()
-        return
+                    except UserCancel:
+                        await ctx.send('Aborting')
+                else: 
+                    args = list(args)
+                    userquery = ' '.join(args).strip() #turns multiword search into single string.
+
+                search = GoogleSearch(bot, ctx, userquery)
+                await search.search()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
+
 
     @commands.command(
         name='image',
@@ -117,30 +149,41 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
 
     async def image(self, ctx, *args):
         UserCancel = Exception
-        if ctx.message.reference:
-            imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
-            if imagemsg.attachments:
-                userquery = imagemsg.attachments[0].url
+        
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
 
-        elif not args: #checks if search is empty
-            await ctx.send('Enter search query:') #if empty, asks user for search query
-            try:
-                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                userquery = userquery.content
-                if userquery == 'cancel': raise UserCancel
-            
-            except asyncio.TimeoutError:
-                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                if ctx.message.reference:
+                    imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
+                    if imagemsg.attachments:
+                        userquery = imagemsg.attachments[0].url
 
-            except UserCancel:
-                await ctx.send('Aborting')
-        else: 
-            args = list(args)
-            userquery = ' '.join(args).strip() #turns multiword search into single string
+                elif not args: #checks if search is empty
+                    await ctx.send('Enter search query:') #if empty, asks user for search query
+                    try:
+                        userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                        userquery = userquery.content
+                        if userquery == 'cancel': raise UserCancel
+                    
+                    except asyncio.TimeoutError:
+                        await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
 
-        search = ImageSearch(bot, ctx, userquery)
-        await search.search()
-        return
+                    except UserCancel:
+                        await ctx.send('Aborting')
+                else: 
+                    args = list(args)
+                    userquery = ' '.join(args).strip() #turns multiword search into single string
+
+                search = ImageSearch(bot, ctx, userquery)
+                await search.search()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
 class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -152,24 +195,34 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
     )
     async def animesearch(self, ctx, *args):
         UserCancel = Exception
-        if not args: #checks if search is empty
-            await ctx.send('Enter search query:') #if empty, asks user for search query
-            try:
-                userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                userquery = userquery.content
-                if userquery == 'cancel': raise UserCancel
-            
-            except asyncio.TimeoutError:
-                await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
 
-            except UserCancel:
-                await ctx.send('Aborting')
-        else: 
-            userquery = ' '.join(args).strip() #turns multiword search into single string
-        
-        search = MyAnimeListSearch(bot, ctx, userquery)
-        await search.search()
-        return
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                if not args: #checks if search is empty
+                    await ctx.send('Enter search query:') #if empty, asks user for search query
+                    try:
+                        userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                        userquery = userquery.content
+                        if userquery == 'cancel': raise UserCancel
+                    
+                    except asyncio.TimeoutError:
+                        await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+                    except UserCancel:
+                        await ctx.send('Aborting')
+                else: 
+                    userquery = ' '.join(args).strip() #turns multiword search into single string
+                
+                search = MyAnimeListSearch(bot, ctx, userquery)
+                await search.search()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
 
 @bot.command(
         name='log',
@@ -185,8 +238,16 @@ async def logging(ctx):
 
 @bot.command(
         name='sudo',
-        help="",
-        brief=""       
+        help="""Admin commands. Server owner has sudo privilege by default. Usage: &sudo [command] [args].
+        ----Commands----
+        say                 Have the bot say something. Args: message. Optional flag: --channel [channelID]
+        adminrole           Designate the server admin role. Omit roleID to see current adminrole. Args: roleID 
+        blacklist           Block a user from using the bot. Args: userID  
+        whitelist           Unblock a user from using the bot. Args: userID       
+        sudoer              Add a user to the sudo list. Args: userID          
+        unsudoer            Remove a user to the sudo list. Args: userID""",
+
+        brief="Admin commands"       
 )
 async def sudo(ctx, *args):
     args = list(args)
