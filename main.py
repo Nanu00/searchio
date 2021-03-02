@@ -4,6 +4,7 @@ from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
 from src.sudo import Sudo
+from src.scholar import ScholarSearch
 import discord
 import os
 from dotenv import load_dotenv
@@ -13,8 +14,8 @@ import json
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
-bot = commands.Bot(command_prefix='&')
+commandprefix = "&"
+bot = commands.Bot(command_prefix=commandprefix)
 
 async def on_message(message):
     if message.author == bot.user:
@@ -28,12 +29,14 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         self.bot = bot
 
     @commands.command(
-            name = 'wikisearch',
-            help="""Add a query after \wikisearch to search through the Wikipedia databases. Send 'cancel' to cancel search.
-                Multilanguage support with --lang followed by an ISO 3166 country code. See \lang for a full list of supported languages
-                Renamed from $search in preparation for more search functions""",
-            brief='Search for a Wikipedia article.'
+        name = 'wikisearch',
+        help=f"""Wikipedia search. Usage: {commandprefix}wikisearch [query] [flags]. Send 'cancel' to cancel search
+            
+            ----Flags----
+            --lang              Specify a country code to search through that wikipedia. Use {commandprefix}wikilang to see available codes""",
+        brief='Search through Wikipedia.'
     )
+
     async def wikisearch(self, ctx, *args):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
@@ -105,9 +108,14 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
 
     @commands.command(
             name = 'gsearch',
-            help="""Add a query after \gsearch to search through Google. Send 'cancel' to cancel search.""",
+            help=f"""Google search. Usage: {commandprefix}gsearch [query].
+                If a keyword is detected in [query], a special function will activate
+                
+                ----Keywords----
+                translate           Uses Google Translate API to translate from language > English 
+                """,
             brief='Search Google.'
-    )
+            )
     async def gsearch(self, ctx, *args):
         UserCancel = Exception
         with open('serverSettings.json', 'r') as data:
@@ -146,7 +154,6 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         help="Reads a user's reply for an image URL or takes in a URL as an arg",
         brief="Reverse image search with a given URL arg or reply"       
     )
-
     async def image(self, ctx, *args):
         UserCancel = Exception
         
@@ -184,14 +191,57 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
             with open('serverSettings.json', 'w') as data:
                 data.write(json.dumps(serverSettings, indent=4))
             return
+
+    @commands.command(
+            name = 'scholar',
+            help=f"""Google Scholar search. Usage: {commandprefix}scholar [query] [flags].
+                
+                ----Flags----
+                --author            Use [query] to search for a specific author. Cannot be used with --cite
+                --cite              Outputs a citation for [query] in BibTex. Cannot be used with --author""",
+            brief='Search through Google Scholar.'
+            )
+    
+    async def scholarsearch(self, ctx, *args):
+        with open('serverSettings.json', 'r') as data:
+            serverSettings = json.load(data)
+
+        if 'blacklist' in serverSettings[str(ctx.guild.id)].keys():
+            if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+                UserCancel = Exception
+                if not args: #checks if search is empty
+                    await ctx.send('Enter search query:') #if empty, asks user for search query
+                    try:
+                        userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                        userquery = userquery.content
+                        if userquery == 'cancel': raise UserCancel
+                    
+                    except asyncio.TimeoutError:
+                        await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+                    except UserCancel:
+                        await ctx.send('Aborting')
+                else:
+                    args = ' '.join(list(args)).strip().split('--') #turns entire command into list split by flag operator
+                    userquery = args[0].strip()
+                    del args[0]
+
+                search = ScholarSearch(bot, ctx, args, userquery)
+                await search.search()
+                return
+        else:
+            serverSettings[str(ctx.guild.id)]['blacklist'] = []
+            with open('serverSettings.json', 'w') as data:
+                data.write(json.dumps(serverSettings, indent=4))
+            return
 class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(
             name = 'animesearch',
-            help="""Add a query after \animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
-            brief='Search for an anime.'
+            help=f"""Add a query after {commandprefix}animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
+            brief='Search through MyAnimeList.'
     )
     async def animesearch(self, ctx, *args):
         UserCancel = Exception
@@ -238,7 +288,7 @@ async def logging(ctx):
 
 @bot.command(
         name='sudo',
-        help="""Admin commands. Server owner has sudo privilege by default. Usage: &sudo [command] [args].
+        help=f"""Admin commands. Server owner has sudo privilege by default. Usage: {commandprefix}sudo [command] [args].
         ----Commands----
         say                 Have the bot say something. Args: message. Optional flag: --channel [channelID]
         adminrole           Designate the server admin role. Omit roleID to see current adminrole. Args: roleID 
@@ -259,9 +309,9 @@ async def sudo(ctx, *args):
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
         if "search" in error.args[0]:
-            await ctx.send("&search is deprecated, use &wikisearch. Do &help search for more info")
+            await ctx.send(f"{commandprefix}search is deprecated, use {commandprefix}wikisearch. Do {commandprefix}help search for more info")
         else:
-            await ctx.send("Command not found. Do &help for available commands")
+            await ctx.send(f"Command not found. Do {commandprefix}help for available commands")
 
 bot.add_cog(WikipediaCommands(bot))
 bot.add_cog(GoogleCommands(bot))
