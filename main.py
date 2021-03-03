@@ -123,8 +123,8 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         self.bot = bot
 
     @commands.command(
-            name = 'gsearch',
-            help=f"""Google search. Usage: {commandprefix}gsearch [query].
+            name = 'google',
+            help=f"""Google search. Usage: {commandprefix}google [query].
                 If a keyword is detected in [query], a special function will activate
                 
                 ----Keywords----
@@ -326,8 +326,8 @@ async def sudo(ctx, *args):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
-        if "search" in error.args[0]:
-            await ctx.send(f"{commandprefix}search is deprecated, use {commandprefix}wikisearch. Do {commandprefix}help search for more info")
+        if "gsearch" in error.args[0]:
+            await ctx.send(f"{commandprefix}gsearch is deprecated, use {commandprefix}google. Do {commandprefix}help search for more info")
         else:
             await ctx.send(f"Command not found. Do {commandprefix}help for available commands")
 
