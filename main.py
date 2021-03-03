@@ -45,8 +45,8 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         self.bot = bot
 
     @commands.command(
-        name = 'wikisearch',
-        help=f"""Wikipedia search. Usage: {commandprefix}wikisearch [query] [flags]. Send 'cancel' to cancel search
+        name = 'wiki',
+        help=f"""Wikipedia search. Usage: {commandprefix}wiki [query] [flags]. Send 'cancel' to cancel search
             
             ----Flags----
             --lang              Specify a country code to search through that wikipedia. Use {commandprefix}wikilang to see available codes""",
@@ -255,8 +255,8 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
         self.bot = bot
 
     @commands.command(
-            name = 'animesearch',
-            help=f"""Add a query after {commandprefix}animesearch to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
+            name = 'anime',
+            help=f"""Add a query after {commandprefix}anime to search through the MyAnimeList database. Send 'cancel' to cancel search.""",
             brief='Search through MyAnimeList.'
     )
     async def animesearch(self, ctx, *args):
@@ -328,6 +328,10 @@ async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
         if "gsearch" in error.args[0]:
             await ctx.send(f"{commandprefix}gsearch is deprecated, use {commandprefix}google. Do {commandprefix}help search for more info")
+        elif "wikisearch" in error.args[0]:
+            await ctx.send(f"{commandprefix}wikisearch is deprecated, use {commandprefix}wiki. Do {commandprefix}help search for more info")
+        elif "animesearch" in error.args[0]:
+            await ctx.send(f"{commandprefix}animesearch is deprecated, use {commandprefix}anime. Do {commandprefix}help search for more info")
         else:
             await ctx.send(f"Command not found. Do {commandprefix}help for available commands")
 
