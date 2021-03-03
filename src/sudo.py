@@ -16,16 +16,10 @@ class Sudo:
         with open('serverSettings.json', 'r') as data:
             self.serverSettings = json.load(data)
 
-        if str(self.ctx.guild.id) not in self.serverSettings: #If settings entry does not exists, creates entry
-            self.serverSettings[str(self.ctx.guild.id)] = {
-                'blacklist': [],
-                'adminrole': None,
-                'sudoer': []
-            }
-            with open('serverSettings.json', 'w') as data:
-                data.write(json.dumps(self.serverSettings, indent=4))
-
     async def adminrole(self, args):
+        if 'adminrole' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['adminrole'] = None
+
         if len(args) > 1:
             self.serverSettings[str(self.ctx.guild.id)]['adminrole'] = args[1]
             adminRole = self.ctx.guild.get_role(int(args[1]))
@@ -57,6 +51,9 @@ class Sudo:
         return
     
     async def blacklist(self, args):
+        if 'blacklist' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['blacklist'] = []
+
         if len(args) > 1:
             self.serverSettings[str(self.ctx.guild.id)]['blacklist'].append(str(args[1]))
             userinfo = await self.bot.fetch_user(int(args[1]))
@@ -64,6 +61,9 @@ class Sudo:
         return
     
     async def whitelist(self, args):
+        if 'blacklist' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['blacklist'] = []
+
         if len(args) > 1:
             try:
                 self.serverSettings[str(self.ctx.guild.id)]['blacklist'].remove(str(args[1]))
@@ -75,6 +75,9 @@ class Sudo:
         return
 
     async def sudoer(self, args):
+        if 'sudoer' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['sudoer'] = []
+
         if args[1] not in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
             self.serverSettings[str(self.ctx.guild.id)]['sudoer'].append(args[1])
             sudoerName = await self.bot.fetch_user(int(args[1]))
@@ -85,6 +88,9 @@ class Sudo:
         return
     
     async def unsudoer(self, args):
+        if 'sudoer' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['sudoer'] = []
+
         if args[1] in self.serverSettings[str(self.ctx.guild.id)]['sudoer']: 
             self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(args[1])
             sudoerName = await self.bot.fetch_user(int(args[1]))
@@ -94,6 +100,23 @@ class Sudo:
             await self.ctx.send(f"'{str(sudoerName)}' is not a sudoer")
         return
 
+    async def safesearch(self, args):
+        if 'safesearch' not in self.serverSettings[str(self.ctx.guild.id)].keys():
+            self.serverSettings[str(self.ctx.guild.id)]['safesearch'] = False
+        
+        if len(args) > 1:
+            if args[1].lower() == 'off':
+                self.serverSettings[str(self.ctx.guild.id)]['safesearch'] = False
+                await self.ctx.send(f"Safesearch is now deactivated")
+            elif args[1].lower() == 'on':
+                self.serverSettings[str(self.ctx.guild.id)]['safesearch'] = True
+                await self.ctx.send(f"Safesearch is now activated")
+            else:
+                await self.ctx.send(f"Invalid argument. Choose either 'on/off'")
+        else:
+            await self.ctx.send(f"Safesearch is {'on' if self.serverSettings[str(self.ctx.guild.id)]['safesearch'] == True else 'off'}")
+        return
+    
     async def sudo(self, args):
     
         #Checks if sudoer is owner
@@ -130,6 +153,10 @@ class Sudo:
                 await self.sudoer(args)
             elif args[0] == 'unsudoer':
                 await self.unsudoer(args)
+            elif args[0] == 'safesearch':
+                await self.safesearch(args)
+            elif args[0]:
+                await self.ctx.send(f"'{args[0]}' is not a valid command.")
 
             if args:
                 log = commandlog(self.ctx, "sudo", ' '.join(args).strip())

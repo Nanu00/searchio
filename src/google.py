@@ -5,17 +5,20 @@ import asyncio
 import discord
 import urllib3
 import re
+import json
 
 class GoogleSearch:
    def __init__(
       self,
       bot,
       ctx,
+      serverSettings,
       searchQuery = None):
 
       self.searchQuery = searchQuery
       self.bot = bot
       self.ctx = ctx
+      self.serverSettings = serverSettings
 
    async def search(self):
       def check(reaction, user):
@@ -63,7 +66,9 @@ class GoogleSearch:
       
       async with self.ctx.typing():
          http = urllib3.PoolManager()
-         url = "https://google.com/search?pws=0&q=" + self.searchQuery.replace(" ", "+") + f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1"
+         url = ("https://google.com/search?pws=0&q=" + 
+            self.searchQuery.replace(" ", "+") + 
+            f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1{'&safe=active' if self.serverSettings[str(self.ctx.guild.id)]['safesearch'] == True else ''}")
          response = http.request('GET', url)
          soup = BeautifulSoup(response.data, features="lxml")
          result_number = 3

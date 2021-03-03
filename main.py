@@ -21,7 +21,23 @@ async def on_message(message):
     if message.author == bot.user:
         return
 @bot.event
-async def on_ready():
+async def on_guild_join(guild):
+    #Reads settings of server
+    with open('serverSettings.json', 'r') as data:
+        serverSettings = json.load(data)
+
+    if str(guild.id) not in serverSettings: #If settings entry does not exists, creates entry
+        serverSettings[str(guild.id)] = {
+            'blacklist': [],
+            'adminrole': None,
+            'sudoer': [],
+            'safesearch': False
+        }
+        with open('serverSettings.json', 'w') as data:
+            data.write(json.dumps(serverSettings, indent=4))
+
+@bot.event
+async def on_connect():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '&'"))
 
 class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
@@ -139,7 +155,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
                     args = list(args)
                     userquery = ' '.join(args).strip() #turns multiword search into single string.
 
-                search = GoogleSearch(bot, ctx, userquery)
+                search = GoogleSearch(bot, ctx, serverSettings, userquery)
                 await search.search()
                 return
         else:
@@ -289,13 +305,15 @@ async def logging(ctx):
 @bot.command(
         name='sudo',
         help=f"""Admin commands. Server owner has sudo privilege by default. Usage: {commandprefix}sudo [command] [args].
+        
         ----Commands----
         say                 Have the bot say something. Args: message. Optional flag: --channel [channelID]
         adminrole           Designate the server admin role. Omit roleID to see current adminrole. Args: roleID 
         blacklist           Block a user from using the bot. Args: userID  
         whitelist           Unblock a user from using the bot. Args: userID       
         sudoer              Add a user to the sudo list. Args: userID          
-        unsudoer            Remove a user to the sudo list. Args: userID""",
+        unsudoer            Remove a user to the sudo list. Args: userID
+        safesearch          Toggles NSFW filtering. Args: on/off""",
 
         brief="Admin commands"       
 )
