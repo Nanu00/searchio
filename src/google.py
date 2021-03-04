@@ -39,9 +39,10 @@ class GoogleSearch:
                destLanguage = Languages.get(name=query[query.index('to')+1].lower().capitalize()).alpha2
                del query[query.index('to')+1]
                del query[query.index('to')]
+            else: destLanguage = 'en'
             query = ' '.join(query)
             translator = google_translator()
-            result = translator.translate(query, lang_tgt=f'{destLanguage if destLanguage else "en"}')
+            result = translator.translate(query, lang_tgt=destLanguage)
             if type(result) == list:
                result = '\n'.join(result)
             try:
