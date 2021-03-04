@@ -1,11 +1,8 @@
 from src.log import commandlog
 from bs4 import BeautifulSoup
-from google_trans_new import google_translator, LANGUAGES
-import asyncio
-import discord
-import urllib3
-import re
-import json
+from google_trans_new import google_translator
+from iso639 import languages as Languages
+import asyncio, discord, urllib3, re
 
 class GoogleSearch:
    def __init__(
@@ -34,18 +31,24 @@ class GoogleSearch:
       log = commandlog(self.ctx, "googlesearch", self.searchQuery)
       log.appendToLog()
 
-      if "translate" in self.searchQuery.lower():
+      if bool(re.search('^translate', self.searchQuery.lower())):
          query = self.searchQuery.lower().split(' ')
          if len(query) > 1:
             del query[0]
+            if "to" in query:
+               destLanguage = Languages.get(name=query[query.index('to')+1].lower().capitalize()).alpha2
+               del query[query.index('to')+1]
+               del query[query.index('to')]
             query = ' '.join(query)
             translator = google_translator()
-            result = translator.translate(query)
-            
-            embed = discord.Embed(title=f"Translation {translator.detect(query)[1].capitalize()} > English", description = result + '\n\nReact with 🔍 to search Google')
-            embed.set_footer(text=f"Requested by {self.ctx.author}")
-            searchresult = await self.ctx.send(embed=embed)
+            result = translator.translate(query, lang_tgt=f'{destLanguage if destLanguage else "en"}')
+            if type(result) == list:
+               result = '\n'.join(result)
             try:
+               embed = discord.Embed(title=f"{translator.detect(query)[1].capitalize()} to {Languages.get(part1=destLanguage).name} Translation", description = result + 
+                  '\n\nReact with 🔍 to search Google')
+               embed.set_footer(text=f"Requested by {self.ctx.author}")
+               searchresult = await self.ctx.send(embed=embed)
                await searchresult.add_reaction('🗑️')
                await searchresult.add_reaction('🔍')
                reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
@@ -57,11 +60,11 @@ class GoogleSearch:
                   await searchresult.delete()
                   pass
             
-            except asyncio.TimeoutError as e: 
+            except asyncio.TimeoutError: 
                await searchresult.clear_reactions()
                return
-            except Exception:
-               await searchresult.delete()
+            except Exception as e:
+               await self.ctx.send(f"Error: {e}")
                return
       
       async with self.ctx.typing():
