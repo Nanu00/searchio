@@ -37,6 +37,33 @@ async def on_guild_join(guild):
         with open('serverSettings.json', 'w') as data:
             data.write(json.dumps(serverSettings, indent=4))
 
+    dm = await guild.owner.create_dm()
+    embed = discord.Embed(title=f"Search.io was added to your server: '{guild.name}'.", 
+        description = f"""
+        Search.io is a bot that searches through multiple search engines/APIs.
+        The activation command is '{commandprefix}', and a list of various commands can be found using '{commandprefix}help'.
+        
+        A list of admin commands can be found by using '{commandprefix}help sudo'. These commands may need ID numbers, which requires Developer Mode.
+        To turn on Developer Mode, go to Settings > Appearances > Advanced > Developer Mode. Then right click on users, roles, or channels to copy ID.
+        
+        As a start, it is suggested to designate an administrator role that can use Search.io's sudo commands. Do '{commandprefix}sudo adminrole [roleID]' to designate an admin role.
+        It is also suggested to turn on Safe Search, if needed. Do '{commandprefix}sudo safesearch [on/off]'. The default is off. 
+        If you need to block a specific user from using Search.io, do '{commandprefix}sudo blacklist [userID]'. Unblock with '{commandprefix}sudo whitelist [userID]'
+        
+        If you have any problems with Search.io, DM ACEslava#9735""")
+    await dm.send(embed)
+    return
+
+@bot.event
+async def on_guild_remove(guild):
+    with open('serverSettings.json', 'r') as data:
+        serverSettings = json.load(data)
+
+    del serverSettings[str(guild.id)]
+    
+    with open('serverSettings.json', 'w') as data:
+        data.write(json.dumps(serverSettings, indent=4))
+
 @bot.event
 async def on_connect():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '&'"))
