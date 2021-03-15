@@ -51,7 +51,7 @@ It is also suggested to turn on Safe Search, if needed. Do '{commandprefix}sudo 
 If you need to block a specific user from using Search.io, do '{commandprefix}sudo blacklist [userID]'. Unblock with '{commandprefix}sudo whitelist [userID]'
 
 If you have any problems with Search.io, DM ACEslava#9735""")
-    await dm.send(embed)
+    await dm.send(embed=embed)
     return
 
 @bot.event
