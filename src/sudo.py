@@ -136,10 +136,10 @@ class Sudo:
         if isOwner or isServerOwner or hasAdmin or isSudoer:
             if not args:
                 await self.ctx.send("""
-                We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
-                #1) Respect the privacy of others.
-                #2) Think before you type.
-                #3) With great power comes great responsibility.
+We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
+#1) Respect the privacy of others.
+#2) Think before you type.
+#3) With great power comes great responsibility.
                 """)
             elif args[0] == 'say':
                 await self.say(args)
