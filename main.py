@@ -37,7 +37,8 @@ async def on_guild_join(guild):
         with open('serverSettings.json', 'w') as data:
             data.write(json.dumps(serverSettings, indent=4))
 
-    dm = await guild.owner.create_dm()
+    owner = await bot.fetch_user(guild.owner_id)
+    dm = await owner.create_dm()
     embed = discord.Embed(title=f"Search.io was added to your server: '{guild.name}'.", 
         description = f"""
 Search.io is a bot that searches through multiple search engines/APIs.
@@ -63,6 +64,7 @@ async def on_guild_remove(guild):
     
     with open('serverSettings.json', 'w') as data:
         data.write(json.dumps(serverSettings, indent=4))
+    return
 
 @bot.event
 async def on_connect():
