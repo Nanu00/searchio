@@ -41,6 +41,7 @@ class commandlog():
         if await bot.is_owner(self.ctx.author):
             dm = await self.ctx.author.create_dm()
             await dm.send(file=discord.File(r'logs.csv'))
+            return
     
         else:
             try:
@@ -57,3 +58,6 @@ class commandlog():
             
             except Exception as e:
                 print(e)
+            
+            finally: 
+                return

@@ -362,7 +362,6 @@ async def logging(ctx):
     await log.logRequest(bot)
     return
 
-
 @bot.command(
         name='sudo',
         help=f"""Admin commands. Server owner has sudo privilege by default. Usage: {commandprefix}sudo [command] [args].
