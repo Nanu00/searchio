@@ -6,12 +6,11 @@ from src.googlereverseimages import ImageSearch
 from src.sudo import Sudo
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
-import discord
-import os
+from src.aprilfools import AprilFools
 from dotenv import load_dotenv
+from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
-import asyncio
-import json
+import discord, re, os, asyncio, json, aiohttp
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -26,7 +25,6 @@ def prefix(bot, message):
 
 bot = commands.Bot(command_prefix=prefix)
 
-     
 @bot.event
 async def on_guild_join(guild):
     #Reads settings of server
@@ -157,7 +155,9 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False:
+        aprilfools = AprilFools(bot, ctx)
+        captchaCheck = await aprilfools.CAPTCHA()
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False and captchaCheck == True:
             if not args: #checks if search is empty
                 await ctx.send('Enter search query:') #if empty, asks user for search query
                 try:

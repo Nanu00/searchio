@@ -128,7 +128,7 @@ class Sudo:
             embed.set_footer(text=f"Requested by {self.ctx.author}")
             await self.ctx.send(embed=embed)
         elif args[0].lower() in ['wikipedia', 'scholar', 'google', 'myanimelist', 'youtube', 'safesearch']:
-            embed = discord.Embed(title=args[0].capitalize(), description=f"{'✅' if self.serverSettings[str(self.ctx.guild.id)]['youtube'] == True else '❌'}")
+            embed = discord.Embed(title=args[0].capitalize(), description=f"{'✅' if self.serverSettings[str(self.ctx.guild.id)][args[0].lower()] == True else '❌'}")
             embed.set_footer(text=f"React with ✅/❌ to enable/disable")
             message = await self.ctx.send(embed=embed)
             try:
