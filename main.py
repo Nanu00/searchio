@@ -89,7 +89,7 @@ class WikipediaCommands(commands.Cog, name="Wikipedia Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['wikipedia'] != False:
             UserCancel = Exception
             language = "en"
             if not args: #checks if search is empty
@@ -157,7 +157,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False:
             if not args: #checks if search is empty
                 await ctx.send('Enter search query:') #if empty, asks user for search query
                 try:
@@ -188,7 +188,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False:
             if ctx.message.reference:
                 imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
                 if imagemsg.attachments:
@@ -226,7 +226,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['scholar'] != False:
             UserCancel = Exception
             if not args: #checks if search is empty
                 await ctx.send('Enter search query:') #if empty, asks user for search query
@@ -258,7 +258,7 @@ class GoogleCommands(commands.Cog, name="Google Search Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['youtube'] != False:
             if not args: #checks if search is empty
                 await ctx.send('Enter search query:') #if empty, asks user for search query
                 try:
@@ -293,7 +293,7 @@ class MyAnimeListCommands(commands.Cog, name="MyAnimeList Commands"):
         with open('serverSettings.json', 'r') as data:
             serverSettings = json.load(data)
 
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['mal'] != False:
             if not args: #checks if search is empty
                 await ctx.send('Enter search query:') #if empty, asks user for search query
                 try:
