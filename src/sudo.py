@@ -39,6 +39,20 @@ class Sudo:
             data.write(json.dumps(serverSettings, indent=4))
         return
 
+    async def userSearch(self, search):
+        try:
+            if search.isnumeric():
+                user = self.ctx.guild.get_member(int(search))
+            else:
+                user = self.ctx.guild.get_member_named(search)
+            
+            if user == None:
+                await self.ctx.send(f"No user named {search} was found in the guild")
+                pass
+            else: return user
+        except Exception:
+            raise
+
     async def say(self, args):
         isOwner = await self.bot.is_owner(self.ctx.author)
         if isOwner == True and "--channel" in args:
@@ -61,9 +75,12 @@ class Sudo:
             self.serverSettings[str(self.ctx.guild.id)]['blacklist'] = []
 
         if len(args) > 1:
-            self.serverSettings[str(self.ctx.guild.id)]['blacklist'].append(str(args[1]))
-            userinfo = await self.bot.fetch_user(int(args[1]))
-            await self.ctx.send(f"'{str(userinfo)}' blacklisted")
+            try:
+                user = await self.userSearch(' '.join(args))
+                self.serverSettings[str(self.ctx.guild.id)]['blacklist'].append(str(user.id))
+                await self.ctx.send(f"{str(user)} blacklisted")
+            except Exception as e:
+                pass
         return
     
     async def whitelist(self, args):
@@ -72,39 +89,42 @@ class Sudo:
 
         if len(args) > 1:
             try:
-                self.serverSettings[str(self.ctx.guild.id)]['blacklist'].remove(str(args[1]))
-                userinfo = await self.bot.fetch_user(int(args[1]))
-                await self.ctx.send(f"'{str(userinfo)}' removed from blacklist")
+                user = await self.userSearch(' '.join(args))
+                self.serverSettings[str(self.ctx.guild.id)]['blacklist'].remove(str(user.id))
+                await self.ctx.send(f"{str(user)} removed from blacklist")
             except ValueError:
-                userinfo = await self.bot.fetch_user(int(args[1]))
-                await self.ctx.send(f"'{str(userinfo)}' not in blacklist")
+                await self.ctx.send(f"{str(user)} not in blacklist")
+            except Exception as e:
+                pass
         return
 
     async def sudoer(self, args):
-        if 'sudoer' not in self.serverSettings[str(self.ctx.guild.id)].keys():
-            self.serverSettings[str(self.ctx.guild.id)]['sudoer'] = []
-
-        if args[1] not in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
-            self.serverSettings[str(self.ctx.guild.id)]['sudoer'].append(args[1])
-            sudoerName = await self.bot.fetch_user(int(args[1]))
-            await self.ctx.send(f"'{str(sudoerName)}' is now a sudoer")
-        else: 
-            sudoerName = await self.bot.fetch_user(int(args[1]))
-            await self.ctx.send(f"'{str(sudoerName)}' is already a sudoer")
-        return
+        try:
+            user = await self.userSearch(' '.join(args))
+            if str(user.id) not in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
+                self.serverSettings[str(self.ctx.guild.id)]['sudoer'].append(str(user.id))
+                await self.ctx.send(f"{str(user)} is now a sudoer")
+            else: 
+                await self.ctx.send(f"{str(user)} is already a sudoer")
+                
+        except Exception as e:
+            pass
+        finally:
+            return
     
     async def unsudoer(self, args):
-        if 'sudoer' not in self.serverSettings[str(self.ctx.guild.id)].keys():
-            self.serverSettings[str(self.ctx.guild.id)]['sudoer'] = []
-
-        if args[1] in self.serverSettings[str(self.ctx.guild.id)]['sudoer']: 
-            self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(args[1])
-            sudoerName = await self.bot.fetch_user(int(args[1]))
-            await self.ctx.send(f"'{str(sudoerName)}' has been removed from sudo")
-        else: 
-            sudoerName = await self.bot.fetch_user(int(args[1]))
-            await self.ctx.send(f"'{str(sudoerName)}' is not a sudoer")
-        return
+        try:
+            user = await self.userSearch(' '.join(args))
+            if str(user.id) in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
+                self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(str(user.id))
+                await self.ctx.send(f"{str(user)} has been removed from sudo")
+            else: 
+                await self.ctx.send(f"{str(user)} is already a sudoer")
+                
+        except Exception as e:
+            pass
+        finally:
+            return
     
     async def config(self, args):
         def check(reaction, user):
@@ -208,14 +228,19 @@ We trust you have received the usual lecture from the local System Administrator
             elif args[0] == 'say':
                 await self.say(args)
             elif args[0] == 'blacklist':
+                del args[0]
                 await self.blacklist(args)
             elif args[0] == 'whitelist':
+                del args[0]
                 await self.whitelist(args)
             elif args[0] == 'sudoer':
+                del args[0]
                 await self.sudoer(args)
             elif args[0] == 'unsudoer':
+                del args[0]
                 await self.unsudoer(args)
             elif args[0] == 'safesearch':
+                del args[0]
                 await self.safesearch(args)
             elif args[0] == 'config':
                 del args[0]

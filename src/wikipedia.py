@@ -169,8 +169,6 @@ class WikipediaSearch:
                     emojitask.cancel()
                     return
 
-                    
-
     async def lang(self):
         #Multiple page system
         languages = list(wikipedia.languages().items())

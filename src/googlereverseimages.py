@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-from googlesearch import search
 from src.log import commandlog
 import requests, discord, random, asyncio
 

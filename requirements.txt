@@ -18,7 +18,6 @@ fake-useragent==0.1.11
 free-proxy==1.0.2
 future==0.18.2
 google-trans-new==1.1.9
-googlesearch-python==2020.0.2
 idna==2.10
 imagesize==1.2.0
 iso-639==0.4.5

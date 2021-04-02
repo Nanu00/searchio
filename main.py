@@ -22,7 +22,10 @@ def prefix(bot, message):
     id = message.guild.id
     return serverSettings[str(id)]['commandprefix']
 
-bot = commands.Bot(command_prefix=prefix)
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
+bot = commands.Bot(command_prefix=prefix, intents=intents)
 
 @bot.event
 async def on_guild_join(guild):
@@ -327,10 +330,10 @@ async def logging(ctx):
         
         ----Commands----
         say                 Have the bot say something. Args: message. Optional flag: --channel [channelID]
-        blacklist           Block a user from using the bot. Args: userID  
-        whitelist           Unblock a user from using the bot. Args: userID       
-        sudoer              Add a user to the sudo list. Args: userID          
-        unsudoer            Remove a user to the sudo list. Args: userID
+        blacklist           Block a user from using the bot. Args: userName OR userID 
+        whitelist           Unblock a user from using the bot. Args: userName OR userID       
+        sudoer              Add a user to the sudo list. Args: userName OR userID           
+        unsudoer            Remove a user to the sudo list. Args: userName OR userID 
         config              Opens the bot configuration menu. Do {commandprefix}sudo config to see list of args""",
 
         brief="Admin commands"       
