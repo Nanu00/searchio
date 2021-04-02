@@ -134,7 +134,7 @@ class GoogleSearch:
                print(" adding link failed")
          
          embed.set_footer(text=f"Requested by {self.ctx.author}")
-         embed.url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+         embed.url = url
       try:
          searchresult = await self.ctx.send(embed=embed)
       except Exception as e:
