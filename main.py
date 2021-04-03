@@ -329,7 +329,7 @@ async def logging(ctx):
         help=f"""Admin commands. Server owner has sudo privilege by default. Usage: {commandprefix}sudo [command] [args].
         
         ----Commands----
-        say                 Have the bot say something. Args: message. Optional flag: --channel [channelID]
+        echo                Have the bot say something. Args: message. Optional flag: --channel [channelID]
         blacklist           Block a user from using the bot. Args: userName OR userID 
         whitelist           Unblock a user from using the bot. Args: userName OR userID       
         sudoer              Add a user to the sudo list. Args: userName OR userID           

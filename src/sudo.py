@@ -53,7 +53,7 @@ class Sudo:
         except Exception:
             raise
 
-    async def say(self, args):
+    async def echo(self, args):
         isOwner = await self.bot.is_owner(self.ctx.author)
         if isOwner == True and "--channel" in args:
             channel = int(args[args.index("--channel")+1])
@@ -119,7 +119,7 @@ class Sudo:
                 self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(str(user.id))
                 await self.ctx.send(f"{str(user)} has been removed from sudo")
             else: 
-                await self.ctx.send(f"{str(user)} is already a sudoer")
+                await self.ctx.send(f"{str(user)} is not a sudoer")
                 
         except Exception as e:
             pass
@@ -225,8 +225,8 @@ We trust you have received the usual lecture from the local System Administrator
 #2) Think before you type.
 #3) With great power comes great responsibility.
                 """)
-            elif args[0] == 'say':
-                await self.say(args)
+            elif args[0] == 'echo':
+                await self.echo(args)
             elif args[0] == 'blacklist':
                 del args[0]
                 await self.blacklist(args)
