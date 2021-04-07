@@ -136,7 +136,7 @@ class GoogleSearch:
                   print(" link: " + link)
                except:
                   print("adding link failed")
-                  
+
             embed.set_footer(text=f"Requested by {self.ctx.author}")
             embed.url = url
          
@@ -149,7 +149,6 @@ class GoogleSearch:
                 
          except asyncio.TimeoutError as e: 
             await message.clear_reactions()
-            raise
 
       except Exception as e:
          await ErrorHandler(self.bot, self.ctx, e)
