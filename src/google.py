@@ -143,7 +143,7 @@ class GoogleSearch:
          await message.edit(content=None, embed=embed)
          try:
             await message.add_reaction('🗑️')
-            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=1)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
             if str(reaction.emoji) == '🗑️':
                await message.delete()
                 
