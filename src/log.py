@@ -1,6 +1,5 @@
 import datetime as dt
 from datetime import datetime
-from src.sudo import Sudo
 import csv, os, discord, asyncio
 
 class commandlog():
@@ -38,13 +37,33 @@ class commandlog():
             writer.writerow(logDict)              
         return
     
-    async def logRequest(self, bot):
-        # if await bot.is_owner(self.ctx.author):
-        #     dm = await self.ctx.author.create_dm()
-        #     await dm.send(file=discord.File(r'logs.csv'))
-        #     return
+    async def logRequest(self, bot, serverSettings):
+        def isSudoer():
+            if serverSettings == None:
+                with open('serverSettings.json', 'r') as data:
+                    serverSettings = json.load(data)
+
+            #Checks if sudoer is owner
+            isOwner = self.ctx.author.id == bot.owner_id
+            
+            #Checks if sudoer is server owner
+            if self.ctx.guild:
+                isServerOwner = self.ctx.author.id == self.ctx.guild.owner_id
+            else: isServerOwner = False
+
+            #Checks if sudoer has the designated adminrole or is a sudoer
+            try:
+                hasAdmin = True if serverSettings[str(self.ctx.guild.id)]['adminrole'] in [str(role.id) for role in self.ctx.author.roles] else False
+                isSudoer = True if str(self.ctx.author.id) in serverSettings[str(self.ctx.guild.id)]['sudoer'] else False
+            except: pass
+            finally: return any([isOwner, isServerOwner, hasAdmin, isSudoer])
+        
+        if await bot.is_owner(self.ctx.author):
+            dm = await self.ctx.author.create_dm()
+            await dm.send(file=discord.File(r'logs.csv'))
+            return
     
-        if Sudo.isSudoer(bot, self.ctx):
+        if isSudoer():
             try:
                 with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
                     for line in csv.DictReader(file): 

@@ -1,6 +1,5 @@
-from discord.embeds import Embed
-from src.wikipedia import WikipediaSearch
 from src.log import commandlog
+from src.wikipedia import WikipediaSearch
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
@@ -10,6 +9,7 @@ from src.youtube import YoutubeSearch
 from dotenv import load_dotenv
 from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
+from discord.embeds import Embed
 import discord, re, os, asyncio, json, aiohttp, textwrap
 
 load_dotenv()
@@ -363,7 +363,7 @@ class Administration(commands.Cog, name="Administration"):
     async def logging(self, ctx): 
         log = commandlog(ctx, "log")
         log.appendToLog()
-        await log.logRequest(bot)
+        await log.logRequest(bot, serverSettings)
         return
 
     @commands.command(name='sudo')
