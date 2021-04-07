@@ -1,20 +1,15 @@
-import discord
-import asyncio
-from src.log import commandlog
-import json
+import discord, asyncio, json, textwrap, difflib
 
 class Sudo:
     def __init__(
         self,
         bot,
-        ctx):
+        ctx,
+        serverSettings):
 
         self.bot = bot
         self.ctx = ctx
-
-        #Reads settings of server
-        with open('serverSettings.json', 'r') as data:
-            self.serverSettings = json.load(data)
+        self.serverSettings = serverSettings
 
     @staticmethod
     def settingsCheck(serverSettings, serverID):
@@ -38,6 +33,32 @@ class Sudo:
         with open('serverSettings.json', 'w') as data:
             data.write(json.dumps(serverSettings, indent=4))
         return
+
+    @staticmethod
+    def isSudoer(bot, ctx, serverSettings=None):
+        if serverSettings == None:
+            with open('serverSettings.json', 'r') as data:
+                serverSettings = json.load(data)
+
+        #Checks if sudoer is owner
+        isOwner = ctx.author.id == bot.owner_id
+        
+        #Checks if sudoer is server owner
+        if ctx.guild:
+            isServerOwner = ctx.author.id == ctx.guild.owner_id
+        else: isServerOwner = False
+
+        #Checks if sudoer has the designated adminrole or is a sudoer
+        try:
+            hasAdmin = True if serverSettings[str(ctx.guild.id)]['adminrole'] in [str(role.id) for role in ctx.author.roles] else False
+            isSudoer = True if str(ctx.author.id) in serverSettings[str(ctx.guild.id)]['sudoer'] else False
+        except: pass
+        finally: return any([isOwner, isServerOwner, hasAdmin, isSudoer])
+
+    def printPrefix(self):
+        if self.ctx == None or self.ctx.guild == None:
+            return '&'
+        else: return self.serverSettings[str(self.ctx.guild.id)]['commandprefix']
 
     async def userSearch(self, search):
         try:
@@ -99,32 +120,34 @@ class Sudo:
         return
 
     async def sudoer(self, args):
-        try:
-            user = await self.userSearch(' '.join(args))
-            if str(user.id) not in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
-                self.serverSettings[str(self.ctx.guild.id)]['sudoer'].append(str(user.id))
-                await self.ctx.send(f"{str(user)} is now a sudoer")
-            else: 
-                await self.ctx.send(f"{str(user)} is already a sudoer")
-                
-        except Exception as e:
-            pass
-        finally:
-            return
+        if self.ctx.author.id == self.bot.owner_id or self.ctx.author.id == self.ctx.guild.owner_id:
+            try:
+                user = await self.userSearch(' '.join(args))
+                if str(user.id) not in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
+                    self.serverSettings[str(self.ctx.guild.id)]['sudoer'].append(str(user.id))
+                    await self.ctx.send(f"{str(user)} is now a sudoer")
+                else: 
+                    await self.ctx.send(f"{str(user)} is already a sudoer")
+                    
+            except Exception as e:
+                pass
+            finally:
+                return
     
     async def unsudoer(self, args):
-        try:
-            user = await self.userSearch(' '.join(args))
-            if str(user.id) in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
-                self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(str(user.id))
-                await self.ctx.send(f"{str(user)} has been removed from sudo")
-            else: 
-                await self.ctx.send(f"{str(user)} is not a sudoer")
-                
-        except Exception as e:
-            pass
-        finally:
-            return
+        if self.ctx.author.id == self.bot.owner_id or self.ctx.author.id == self.ctx.guild.owner_id:
+            try:
+                user = await self.userSearch(' '.join(args))
+                if str(user.id) in self.serverSettings[str(self.ctx.guild.id)]['sudoer']:
+                    self.serverSettings[str(self.ctx.guild.id)]['sudoer'].remove(str(user.id))
+                    await self.ctx.send(f"{str(user)} has been removed from sudo")
+                else: 
+                    await self.ctx.send(f"{str(user)} is not a sudoer")
+                    
+            except Exception as e:
+                pass
+            finally:
+                return
     
     async def config(self, args):
         def check(reaction, user):
@@ -135,17 +158,17 @@ class Sudo:
         if len(args) == 0:
             embed = discord.Embed(title="Guild Configuration")
             embed.add_field(name="Administration", value=f"""
-` Adminrole:` {adminrole.name if adminrole != None else 'None set'}
-`Safesearch:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['safesearch'] == True else '❌'}
-`     Prefix:` {self.serverSettings[str(self.ctx.guild.id)]['commandprefix']}""")
+                ` Adminrole:` {adminrole.name if adminrole != None else 'None set'}
+                `Safesearch:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['safesearch'] == True else '❌'}
+                `    Prefix:` {self.serverSettings[str(self.ctx.guild.id)]['commandprefix']}""")
             embed.add_field(name="Search Engines", value=f"""
-`Wikipedia:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['wikipedia'] == True else '❌'}
-`  Scholar:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['scholar'] == True else '❌'}
-`   Google:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['google'] == True else '❌'}
-`      MAL:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['mal'] == True else '❌'}
-`  Youtube:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['youtube'] == True else '❌'}""")
+                `Wikipedia:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['wikipedia'] == True else '❌'}
+                `  Scholar:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['scholar'] == True else '❌'}
+                `   Google:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['google'] == True else '❌'}
+                `      MAL:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['mal'] == True else '❌'}
+                `  Youtube:` {'✅' if self.serverSettings[str(self.ctx.guild.id)]['youtube'] == True else '❌'}""")
             
-            embed.set_footer(text=f"Requested by {self.ctx.author}")
+            embed.set_footer(text=f"Do {self.printPrefix()}config [setting] to change a specific setting")
             await self.ctx.send(embed=embed)
         elif args[0].lower() in ['wikipedia', 'scholar', 'google', 'myanimelist', 'youtube', 'safesearch']:
             embed = discord.Embed(title=args[0].capitalize(), description=f"{'✅' if self.serverSettings[str(self.ctx.guild.id)][args[0].lower()] == True else '❌'}")
@@ -166,66 +189,62 @@ class Sudo:
             except asyncio.TimeoutError as e: 
                 await message.clear_reactions()
         elif args[0].lower() == 'adminrole':
-            embed = discord.Embed(title='Adminrole', description=f"{await self.ctx.guild.get_role(int(adminrole)) if adminrole != None else 'None set'}")
-            embed.set_footer(text=f"Reply with the roleID of the role you want to set")
-            message = await self.ctx.send(embed=embed)
+            if not args[1]:
+                embed = discord.Embed(title='Adminrole', description=f"{await self.ctx.guild.get_role(int(adminrole)) if adminrole != None else 'None set'}")
+                embed.set_footer(text=f"Reply with the roleID of the role you want to set")
+                message = await self.ctx.send(embed=embed)
 
-            try: 
-                userresponse = await self.bot.wait_for('message', check=lambda m: m.author == self.ctx.author, timeout=30)
-                await userresponse.delete()
-                await message.delete()
+                try: 
+                    userresponse = await self.bot.wait_for('message', check=lambda m: m.author == self.ctx.author, timeout=30)
+                    await userresponse.delete()
+                    await message.delete()
+                    response = userresponse.content
+                except asyncio.TimeoutError as e:
+                    return
+            else: 
+                errorCount = 0
+                errorMsg = None
+                response = args[1]
+                while errorCount <= 1:
+                    if errorMsg != None:
+                        await errorMsg.delete()
 
-                self.serverSettings[str(self.ctx.guild.id)]['adminrole'] = userresponse.content
-                adminrole = self.ctx.guild.get_role(int(userresponse.content))
-                await self.ctx.send(f"'{adminrole.name}' is now the admin role")
+                    try: 
+                        adminrole = self.ctx.guild.get_role(int(response))
+                        self.serverSettings[str(self.ctx.guild.id)]['adminrole'] = response
+                        await self.ctx.send(f"'{adminrole.name}' is now the admin role")
+                        break
+                    except Exception as e:
+                        errorMsg = await self.ctx.send(f"{response} is not a valid roleID. Please edit your message or try again")
+                        messageEdit = await self.bot.wait_for('message_edit', check=lambda var, m: m.author == self.ctx.author, timeout=60)
+                        response = ''.join([li for li in difflib.ndiff(messageEdit[0].content, messageEdit[1].content) if '+' in li]).replace('+ ', '')
+                        errorCount += 1
+                        pass
                 return
-
-            except asyncio.TimeoutError as e:
-                return
-        
+                    
         elif args[0].lower() == 'prefix':
-            embed = discord.Embed(title='Prefix', description=f"{self.serverSettings[str(self.ctx.guild.id)]['commandprefix']}")
-            embed.set_footer(text=f"Reply with the prefix that you want to set")
-            message = await self.ctx.send(embed=embed)
+            if not args[1]:
+                embed = discord.Embed(title='Prefix', description=f"{self.serverSettings[str(self.ctx.guild.id)]['commandprefix']}")
+                embed.set_footer(text=f"Reply with the prefix that you want to set")
+                message = await self.ctx.send(embed=embed)
 
-            try: 
-                userresponse = await self.bot.wait_for('message', check=lambda m: m.author == self.ctx.author, timeout=30)
-                await userresponse.delete()
-                await message.delete()
+                try: 
+                    userresponse = await self.bot.wait_for('message', check=lambda m: m.author == self.ctx.author, timeout=30)
+                    await userresponse.delete()
+                    await message.delete()
+                    response = userresponse.content
 
-                self.serverSettings[str(self.ctx.guild.id)]['commandprefix'] = userresponse.content
-                await self.ctx.send(f"'{userresponse.content}' is now the guild prefix")
-                return
-
-            except asyncio.TimeoutError as e:
-                return
+                except asyncio.TimeoutError as e:
+                    return
+            else: response = args[1]
             
-    
+            self.serverSettings[str(self.ctx.guild.id)]['commandprefix'] = response
+            await self.ctx.send(f"'{response}' is now the guild prefix")
+            return
+                
     async def sudo(self, args):
-    
-        #Checks if sudoer is owner
-        isOwner = await self.bot.is_owner(self.ctx.author) 
-        
-        #Checks if sudoer is server owner
-        if self.ctx.guild:
-            isServerOwner = bool(self.ctx.author.id == self.ctx.guild.owner_id)
-        else: isServerOwner = False
-
-        #Checks if sudoer has the designated adminrole or is a sudoer
-        try:
-            hasAdmin = bool(self.serverSettings[str(self.ctx.guild.id)]['adminrole'] in [str(role.id) for role in self.ctx.author.roles])
-            isSudoer = bool(str(self.ctx.author.id) in self.serverSettings[str(self.ctx.guild.id)]['sudoer'])
-        except: pass
-        
-        if isOwner or isServerOwner or hasAdmin or isSudoer:
-            if not args:
-                await self.ctx.send("""
-We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
-#1) Respect the privacy of others.
-#2) Think before you type.
-#3) With great power comes great responsibility.
-                """)
-            elif args[0] == 'echo':
+        if args:
+            if args[0] == 'echo':
                 await self.echo(args)
             elif args[0] == 'blacklist':
                 del args[0]
@@ -245,17 +264,16 @@ We trust you have received the usual lecture from the local System Administrator
             elif args[0] == 'config':
                 del args[0]
                 await self.config(args)
-            elif args[0]:
+            else:
                 await self.ctx.send(f"'{args[0]}' is not a valid command.")
-
-            if args:
-                log = commandlog(self.ctx, "sudo", ' '.join(args).strip())
-                log.appendToLog()
-                
-        else: 
-            await self.ctx.send(f"{self.ctx.author} is not in the sudoers file.  This incident will be reported.")
-            log = commandlog(self.ctx, "sudo", 'unauthorised')
-            log.appendToLog()
+        else:
+            await self.ctx.send(
+                textwrap.dedent("""\
+                We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
+                #1) Respect the privacy of others.
+                #2) Think before you type.
+                #3) With great power comes great responsibility."""))
+            
 
         with open('serverSettings.json', 'w') as data:
             data.write(json.dumps(self.serverSettings, indent=4))

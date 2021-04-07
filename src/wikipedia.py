@@ -1,8 +1,6 @@
-import wikipedia
-import discord
-import asyncio
 from src.log import commandlog
-import random 
+from src.loadingmessage import LoadingMessage
+import wikipedia, discord, asyncio, random
 
 class WikipediaSearch:
     def __init__(
@@ -20,6 +18,7 @@ class WikipediaSearch:
     async def search(self):
         msg = []
         async with self.ctx.typing():
+            loadingMessage = await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
             await asyncio.sleep(random.uniform(0,2))
             result = wikipedia.search(self.searchQuery)
 
@@ -34,18 +33,18 @@ class WikipediaSearch:
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}'\n Page {cur_page}/{pages}:", description=
                     ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[cur_page-1])]))
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
-                msg.append(await self.ctx.send(embed=embed))
+                await msg[0].edit(content=None, embed=embed)
                 await self.bot.wait_until_ready()
                 await msg[-1].add_reaction('◀️')
                 await msg[-1].add_reaction('▶️')
-                msg.append(await self.ctx.send('Please choose option'))
+                msg.append(await self.ctx.send("Please choose option or cancel"))
             
             else:
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}':", description=
                     ''.join([f'[{index}]: {value}\n' for index, value in enumerate(result[0])]))
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 msg.append(await self.ctx.send(embed=embed))
-                msg.append(await self.ctx.send('Please choose option'))
+                msg.append(await self.ctx.send("Please choose option or cancel"))
 
             def check(reaction, user):
                 return user == self.ctx.author and str(reaction.emoji) in ["◀️", "▶️", "🗑️"]
@@ -135,8 +134,6 @@ class WikipediaSearch:
 
                     for message in msg:
                         await message.delete()
-
-                    await self.ctx.send(f"Cancelled")
 
                     emojitask.cancel()
                     return

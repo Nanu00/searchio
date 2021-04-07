@@ -1,5 +1,6 @@
 import datetime as dt
 from datetime import datetime
+from src.sudo import Sudo
 import csv, os, discord, asyncio
 
 class commandlog():
@@ -38,23 +39,42 @@ class commandlog():
         return
     
     async def logRequest(self, bot):
-        if await bot.is_owner(self.ctx.author):
-            dm = await self.ctx.author.create_dm()
-            await dm.send(file=discord.File(r'logs.csv'))
-            return
+        # if await bot.is_owner(self.ctx.author):
+        #     dm = await self.ctx.author.create_dm()
+        #     await dm.send(file=discord.File(r'logs.csv'))
+        #     return
     
+        if Sudo.isSudoer(bot, self.ctx):
+            try:
+                with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+                    for line in csv.DictReader(file): 
+                        if int(line["Guild"]) == self.ctx.guild.id:
+                            with open(f"./src/cache/{self.ctx.guild}_guildLogs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                                writer = csv.DictWriter(newFile, fieldnames=self.logFieldnames)
+                                writer.writerow(line)
+
+                dm = await self.ctx.author.create_dm()
+                await dm.send(file=discord.File(f"./src/cache/{self.ctx.guild}_guildLogs.csv"))
+                os.remove(f"./src/cache/{self.ctx.guild}_guildLogs.csv")
+            
+            except Exception as e:
+                print(e)
+            
+            finally: 
+                return
+        
         else:
             try:
                 with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
                     for line in csv.DictReader(file): 
                         if int(line["User"]) == self.ctx.author.id:
-                            with open(f"{self.ctx.author.id}_personal_logs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                            with open(f"./src/cache/{self.ctx.author}_personalLogs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
                                 writer = csv.DictWriter(newFile, fieldnames=self.logFieldnames)
                                 writer.writerow(line)
 
                 dm = await self.ctx.author.create_dm()
-                await dm.send(file=discord.File(f"{self.ctx.author.id}_personal_logs.csv"))
-                os.remove(f"{self.ctx.author.id}_personal_logs.csv")
+                await dm.send(file=discord.File(f"./src/cache/{self.ctx.author}_personalLogs.csv"))
+                os.remove(f"./src/cache/{self.ctx.author}_personalLogs.csv")
             
             except Exception as e:
                 print(e)

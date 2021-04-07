@@ -1,8 +1,9 @@
 from src.log import commandlog
 from bs4 import BeautifulSoup
 from google_trans_new import google_translator
+from src.loadingmessage import LoadingMessage
 from iso639 import languages as Languages
-import asyncio, discord, urllib3, re
+import asyncio, discord, urllib3, re, random
 
 class GoogleSearch:
    def __init__(
@@ -67,8 +68,9 @@ class GoogleSearch:
             except Exception as e:
                await self.ctx.send(f"Error: {e}")
                return
-      
       async with self.ctx.typing():
+         message = await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
+         await asyncio.sleep(random.uniform(0,2))
          http = urllib3.PoolManager()
          url = ("https://google.com/search?pws=0&q=" + 
             self.searchQuery.replace(" ", "+") + 
@@ -79,7 +81,7 @@ class GoogleSearch:
          google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
 
          breaklines = ["People also search for", "Episodes"]
-         wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com ", "Related searches", "Top stories"] # fuck shutterstock the filter doesn't even work atm
+         wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com ", "Related searches", "Top stories", 'People also ask' ] # fuck shutterstock the filter doesn't even work atm
 
          log = commandlog(self.ctx, "googlesearch results", url)
          log.appendToLog()
@@ -136,7 +138,7 @@ class GoogleSearch:
          embed.set_footer(text=f"Requested by {self.ctx.author}")
          embed.url = url
       try:
-         searchresult = await self.ctx.send(embed=embed)
+         searchresult = await message.edit(content=None, embed=embed)
       except Exception as e:
          print(e)
 
