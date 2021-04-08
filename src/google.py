@@ -84,7 +84,7 @@ class GoogleSearch:
             http = urllib3.PoolManager()
             url = ("https://google.com/search?pws=0&q=" + 
                self.searchQuery.replace(" ", "+") + 
-               f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1{'&safe=active' if self.serverSettings[str(self.ctx.guild.id)]['safesearch'] == True else ''}")
+               f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
             response = http.request('GET', url)
             soup = BeautifulSoup(response.data, features="lxml")
             result_number = 3

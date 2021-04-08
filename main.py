@@ -16,11 +16,11 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 with open('serverSettings.json', 'r') as data:
-    serverSettings = json.load(data)
+    serverSettings = json.load(data, object_hook=lambda d: {int(k) if k.isdigit() else k: v for k, v in d.items()})
 
 def prefix(bot, message):
     try:
-        commandprefix = serverSettings[str(message.guild.id)]['commandprefix']
+        commandprefix = serverSettings[message.guild.id]['commandprefix']
     except Exception as e:
         commandprefix = '&'
     finally: return commandprefix
@@ -28,7 +28,7 @@ def prefix(bot, message):
 def printPrefix(ctx=None):
     if ctx == None or ctx.guild == None:
         return '&'
-    else: return serverSettings[str(ctx.guild.id)]['commandprefix']
+    else: return serverSettings[ctx.guild.id]['commandprefix']
 
 intents = discord.Intents.default()
 intents.members = True
@@ -61,7 +61,7 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild):
-    del serverSettings[str(guild.id)]
+    del serverSettings[guild.id]
     
     with open('serverSettings.json', 'w') as data:
         data.write(json.dumps(serverSettings, indent=4))
@@ -69,13 +69,18 @@ async def on_guild_remove(guild):
 
 @bot.event
 async def on_connect():
+    global serverSettings
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="command prefix '&'"))
 
     appInfo = await bot.application_info()
     bot.owner_id = appInfo.owner.id
 
     for servers in bot.guilds:
-        Sudo.settingsCheck(serverSettings, servers.id)
+        serverSettings = Sudo.settingsCheck(serverSettings, servers.id)
+    
+    with open('serverSettings.json', 'w') as data:
+        data.write(json.dumps(serverSettings, indent=4))
+    return
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -96,13 +101,13 @@ async def help(ctx, *args):
         `config:` Views the guild settings. Requires sudo privileges to edit settings
     """))
     embed.add_field(name="Search Engines", inline=False, value=textwrap.dedent(f"""\
-        {"`wikipedia:` Search through Wikipedia." if serverSettings[str(ctx.guild.id)]['wikipedia'] == True else ''}
-        {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[str(ctx.guild.id)]['wikipedia'] == True else ''}
-        {"`   google:` Search through Google" if serverSettings[str(ctx.guild.id)]['google'] == True else ''}
-        {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[str(ctx.guild.id)]['google'] == True else ''}
-        {"`  scholar:` Search through Google Scholar" if serverSettings[str(ctx.guild.id)]['scholar'] == True else ''}
-        {"`  youtube:` Search through Youtube" if serverSettings[str(ctx.guild.id)]['youtube'] == True else ''}
-        {"`      mal:` Search through MyAnimeList" if serverSettings[str(ctx.guild.id)]['mal'] == True else ''}
+        {"`wikipedia:` Search through Wikipedia." if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
+        {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
+        {"`   google:` Search through Google" if serverSettings[ctx.guild.id]['google'] == True else ''}
+        {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[ctx.guild.id]['google'] == True else ''}
+        {"`  scholar:` Search through Google Scholar" if serverSettings[ctx.guild.id]['scholar'] == True else ''}
+        {"`  youtube:` Search through Youtube" if serverSettings[ctx.guild.id]['youtube'] == True else ''}
+        {"`      mal:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
     """))
     embed.set_footer(text=f"Do {commandPrefix}help [command] for more information")
 
@@ -191,7 +196,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     @commands.command(name = 'wiki')
     async def wikisearch(self, ctx, *args):
         global serverSettings
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['wikipedia'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['wikipedia'] != False:
             UserCancel = Exception
             language = "en"
             if not args: #checks if search is empty
@@ -220,7 +225,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     @commands.command(name = 'wikilang')
     async def wikilang(self, ctx):
         global serverSettings
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist']:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist']:
             log = commandlog(ctx, "wikilang")
             log.appendToLog()
 
@@ -231,7 +236,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def gsearch(self, ctx, *args):
         global serverSettings
         UserCancel = Exception
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['google'] != False:
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
                 try:
@@ -256,7 +261,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def image(self, ctx, *args):
         global serverSettings
         UserCancel = Exception
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['google'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['google'] != False:
             if ctx.message.reference:
                 imagemsg = await ctx.fetch_message(ctx.message.reference.message_id)
                 if imagemsg.attachments:
@@ -285,7 +290,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     @commands.command(name = 'scholar')   
     async def scholarsearch(self, ctx, *args):
         global serverSettings
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['scholar'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['scholar'] != False:
             UserCancel = Exception
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
@@ -312,7 +317,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def ytsearch(self, ctx, *args):
         global serverSettings
         UserCancel = Exception
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['youtube'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['youtube'] != False:
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
                 try:
@@ -337,7 +342,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def animesearch(self, ctx, *args):
         global serverSettings
         UserCancel = Exception
-        if str(ctx.author.id) not in serverSettings[str(ctx.guild.id)]['blacklist'] and serverSettings[str(ctx.guild.id)]['mal'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['mal'] != False:
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
                 try:
@@ -383,7 +388,7 @@ class Administration(commands.Cog, name="Administration"):
             await command.sudo(args)
 
         with open('serverSettings.json', 'r') as data:
-            serverSettings = json.load(data)
+            serverSettings = json.load(data, object_hook=lambda d: {int(k) if k.isdigit() else k: v for k, v in d.items()})
         return
 
     @commands.command(name='config')
@@ -396,7 +401,7 @@ class Administration(commands.Cog, name="Administration"):
         else: await command.config([])
 
         with open('serverSettings.json', 'r') as data:
-            serverSettings = json.load(data)
+            serverSettings = json.load(data, object_hook=lambda d: {int(k) if k.isdigit() else k: v for k, v in d.items()})
         return
     
 bot.add_cog(SearchEngines(bot))
