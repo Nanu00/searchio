@@ -35,5 +35,24 @@ Run main.py from commandline
   * The required instance variables are:
     * self.bot (Discord.py Bot object)
     * self.searchQuery (The user search query)
-    * OPTIONAL: self.language (language switching)
+    * OPTIONAL: self.searchSettings (guild-specific settings)
   * **Any edits to main.py will be rejected.** I will integrate the modules. Please have sufficient documentation for the module.
+
+  * The serverSettings.json is structured as follows:
+  ```
+    {
+    "guildID": {
+        "adminrole": "roleID" OR None,
+        "blacklist": ["userID"],
+        "sudoer": ["userID"],
+        "safesearch": bool,
+        "wikipedia": bool,
+        "scholar": bool,
+        "google": bool,
+        "mal": bool,
+        "youtube": bool,
+        "commandprefix": char
+      }
+    }
+    
+  ```
