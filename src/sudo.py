@@ -62,7 +62,6 @@ class Sudo:
             else: return self.serverSettings[self.ctx.guild.id]['commandprefix']
         except Exception as e:
             await ErrorHandler(self.bot, self.ctx, e)
-        finally: return
 
     async def userSearch(self, search):
         try:
