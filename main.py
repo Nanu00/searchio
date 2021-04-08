@@ -148,8 +148,10 @@ async def help(ctx, *args):
             embed = discord.Embed(title="Google", description=
                 f"Google search.\nUsage: {commandPrefix}google [query].\nIf a keyword is detected in [query], a special function will activate")
             embed.add_field(name="Keywords", inline=False, value=
-            """`translate:` Uses Google Translate API to translate languages. Defaults to output English unless otherwise specified with 'to [language]'
-            Example Query: translate hello to spanish""")
+            """`translate:` Uses Google Translate API to translate languages. 
+            Input automatically detects language unless specified with 'from [language]' 
+            Defaults to output English unless specified with 'to [language]'
+            Example Query: translate مرحبا from arabic to spanish""")
         elif args[0] == 'image':
             embed = discord.Embed(title="Google Image", description=
                 f"Uses Google's Reverse Image search to output URLs that contain the image.\nUsage: {commandPrefix}image [imageURL] OR reply to an image in the chat")
@@ -197,7 +199,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
@@ -235,7 +237,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
@@ -265,7 +267,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
@@ -290,7 +292,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
@@ -316,7 +318,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
@@ -341,7 +343,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
                 try:
                     userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
                     userquery = userquery.content
-                    if userquery == 'cancel': raise UserCancel
+                    if userquery.lower() == 'cancel': raise UserCancel
                 
                 except asyncio.TimeoutError:
                     await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
