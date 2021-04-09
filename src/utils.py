@@ -380,7 +380,10 @@ class Log():
             finally: 
                 return
 
-async def ErrorHandler(bot, ctx, error):
+async def ErrorHandler(bot, ctx, error, command, args):
+    if type(args) is list:
+        ' '.join(args)
+        
     with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
         doesErrorCodeMatch = False
         errorCode = "%06x" % random.randint(0, 0xFFFFFF)
@@ -394,12 +397,12 @@ async def ErrorHandler(bot, ctx, error):
             break
     
     Log.appendToLog(ctx, "error", errorCode)
-    
-    errorLoggingChannel = await bot.fetch_channel(829172391557070878)
-    await errorLoggingChannel.send(f"```Error {errorCode}\nIn Guild: {ctx.guild.id}:\n{traceback.format_exc()}```")
 
-    embed = discord.Embed(description=f"An unknown error has occured. Please try again later. \nError Code {errorCode}")
+    errorLoggingChannel = await bot.fetch_channel(829172391557070878)
+    await errorLoggingChannel.send(f"```Error {errorCode}\nIn Guild: {ctx.guild.id}\nBy User: {str(ctx.author)}\nCommand: {command}\nArgs: {args}\n{traceback.format_exc()}```")
+
+    embed = discord.Embed(description=f"An unknown error has occured. Please try again later. \nError Code: {errorCode}")
     errorMsg = await ctx.send(embed=embed)
-    asyncio.sleep(60)
+    await asyncio.sleep(60)
     await errorMsg.delete()
     return

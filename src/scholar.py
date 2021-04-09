@@ -17,15 +17,14 @@ class ScholarSearch:
     
     async def search(self):
         try:
-            async with self.ctx.typing():
-                await asyncio.sleep(random.uniform(0,2))
-                if 'author' in self.args:
-                    result = next(scholarly.search_author(self.searchQuery))
-                elif 'cite' in self.args:
-                    result = scholarly.search_pubs(self.searchQuery)
-                    result = scholarly.bibtex(next(result))
-                else: 
-                    result = next(scholarly.search_pubs(self.searchQuery))
+            await asyncio.sleep(random.uniform(0,2))
+            if 'author' in self.args:
+                result = next(scholarly.search_author(self.searchQuery))
+            elif 'cite' in self.args:
+                result = scholarly.search_pubs(self.searchQuery)
+                result = scholarly.bibtex(next(result))
+            else: 
+                result = next(scholarly.search_pubs(self.searchQuery))
 
             Log.appendToLog(self.ctx, "scholar", self.searchQuery)
 
@@ -110,5 +109,5 @@ class ScholarSearch:
                     await searchresult.delete()
 
         except Exception as e:
-            await ErrorHandler(self.bot, self.ctx, e)
+            await ErrorHandler(self.bot, self.ctx, e, 'scholar', self.searchQuery)
         finally: return

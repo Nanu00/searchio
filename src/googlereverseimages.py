@@ -98,5 +98,5 @@ class ImageSearch:
                 await self.ctx.send("Google is currently blocking searches. Please try again later")
         
         except Exception as e:
-            await ErrorHandler(self.bot, self.ctx, e)
+            await ErrorHandler(self.bot, self.ctx, e, 'image', self.searchQuery)
         finally: return

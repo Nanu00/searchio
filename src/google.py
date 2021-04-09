@@ -72,84 +72,90 @@ class GoogleSearch:
                except Exception as e:
                   await self.ctx.send(f"Error: {e}")
                   return
-         async with self.ctx.typing():
-            message = await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
-            await asyncio.sleep(random.uniform(0,2))
-            http = urllib3.PoolManager()
-            url = ("https://google.com/search?pws=0&q=" + 
-               self.searchQuery.replace(" ", "+") + "+-stock"
-               f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=5{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
-            response = http.request('GET', url)
-            soup = BeautifulSoup(response.data, features="lxml")
-            result_number = 3
-            google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
-
+                  
+         message = await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
+         await asyncio.sleep(random.uniform(0,2))
+         http = urllib3.PoolManager()
+         url = ("https://google.com/search?pws=0&q=" + 
+            self.searchQuery.replace(" ", "+") + "+-stock+-pinterest"
+            f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=5{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
+         response = http.request('GET', url)
+         soup = BeautifulSoup(response.data, features="lxml")
+         result_number = 3
+         foundImage = True
+         google_snippet_result = soup.find("div", {"id": "main"})
+   
+         if google_snippet_result is not None:
+            google_snippet_result = google_snippet_result.contents[result_number]
             breaklines = ["People also search for", "Episodes"]
             wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "Related searches", "Top stories", 'People also ask' ]
 
-         Log.appendToLog(self.ctx, "googlesearch results", url)
+            Log.appendToLog(self.ctx, "googlesearch results", url)
 
-         foundImage = True
-         if bool(re.search('^image', self.searchQuery.lower())):
-            while 'Images' not in google_snippet_result.strings:
-               result_number +=1
+            
+            if bool(re.search('^image', self.searchQuery.lower())):
+               while 'Images' not in google_snippet_result.strings:
+                  result_number +=1
+                  google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
+
+                  if result_number < len(soup.find("div", {"id": "main"}).contents)-1:
+                     result_number = 3
+                     foundImage = False
+                     break
+            
+            while any(map(lambda wrong_first_result: wrong_first_result in google_snippet_result.strings, wrong_first_results)):
+               result_number+=1
                google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
 
-               if result_number < len(soup.find("div", {"id": "main"}).contents)-1:
-                  result_number = 3
-                  foundImage = False
-                  break
-         
-         while any(map(lambda wrong_first_result: wrong_first_result in google_snippet_result.strings, wrong_first_results)):
-            result_number+=1
-            google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
-
-         printstring = ""
-         for div in [d for d in google_snippet_result.findAll('div') if not d.find('div')]:  # makes the text portion of the message by finding all strings in the snippet + formatting
-            linestring = ""
-            for string in div.stripped_strings:
-               linestring += string + " "
-            if linestring == "View all ":  # clean this part up
+            printstring = ""
+            for div in [d for d in google_snippet_result.findAll('div') if not d.find('div')]:  # makes the text portion of the message by finding all strings in the snippet + formatting
                linestring = ""
+               for string in div.stripped_strings:
+                  linestring += string + " "
+               if linestring == "View all ":  # clean this part up
+                  linestring = ""
 
-            if len(printstring+linestring+"\n") < 2000 and not any(map(lambda breakline: breakline in linestring, breaklines)):
-               printstring += linestring + "\n"
-            else:
-               break
-
-         embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}', 
-            description = "{}".format('' if foundImage else 'No image found. Defaulting to first result:\n\n') + re.sub("\n\n+", "\n\n", printstring))
-         print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
-         image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result.
-         
-         # tries to add an image to the embed
-         if image is not None: 
-            try:
-               imgurl = linkUnicodeParse(re.findall("(?<=imgurl=).*(?=&imgrefurl)", image.parent.parent["href"])[0])
-               if "encrypted" in imgurl:
-                     imgurl = re.findall("(?<=imgurl=).*(?=&imgrefurl)", google_snippet_result.findAll("img")[1].parent.parent["href"])[0]
-               # imgurl = re.findall("(?<=\=).*(?=&imgrefurl)", image["href"])[0]
-               print(" image: " + imgurl)
-               if "Images" in google_snippet_result.strings:
-                     embed.set_image(url=imgurl)
+               if len(printstring+linestring+"\n") < 2000 and not any(map(lambda breakline: breakline in linestring, breaklines)):
+                  printstring += linestring + "\n"
                else:
-                     embed.set_thumbnail(url=imgurl)
-            except:
-               foundImage = False
+                  break
 
-         # tries to add a link to the embed
-         link_list = [a for a in google_snippet_result.findAll("a", href_="") if not a.find("img")] 
-         if len(link_list) != 0: 
-            try:
-               link = linkUnicodeParse(re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0])
-               embed.add_field(name="Relevant Link", value=link)
-               print(" link: " + link)
-            except:
-               print("adding link failed")
+            embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}', 
+               description = "{}".format('' if foundImage else 'No image found. Defaulting to first result:\n\n') + re.sub("\n\n+", "\n\n", printstring))
+            print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
+            image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result.
+            
+            # tries to add an image to the embed
+            if image is not None: 
+               try:
+                  imgurl = linkUnicodeParse(re.findall("(?<=imgurl=).*(?=&imgrefurl)", image.parent.parent["href"])[0])
+                  if "encrypted" in imgurl:
+                        imgurl = re.findall("(?<=imgurl=).*(?=&imgrefurl)", google_snippet_result.findAll("img")[1].parent.parent["href"])[0]
+                  # imgurl = re.findall("(?<=\=).*(?=&imgrefurl)", image["href"])[0]
+                  print(" image: " + imgurl)
+                  if "Images" in google_snippet_result.strings:
+                        embed.set_image(url=imgurl)
+                  else:
+                        embed.set_thumbnail(url=imgurl)
+               except:
+                  foundImage = False
 
-         embed.set_footer(text=f"Requested by {self.ctx.author}")
-         embed.url = url
+            # tries to add a link to the embed
+            link_list = [a for a in google_snippet_result.findAll("a", href_="") if not a.find("img")] 
+            if len(link_list) != 0: 
+               try:
+                  link = linkUnicodeParse(re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0])
+                  embed.add_field(name="Relevant Link", value=link)
+                  print(" link: " + link)
+               except:
+                  print("adding link failed")
+            embed.url = url
          
+         else:
+            embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}',
+               description = 'No results found')
+         
+         embed.set_footer(text=f"Requested by {self.ctx.author}")
          await message.edit(content=None, embed=embed)
          try:
             await message.add_reaction('🗑️')
@@ -162,7 +168,7 @@ class GoogleSearch:
 
       except Exception as e:
          await message.delete()
-         await ErrorHandler(self.bot, self.ctx, e)
+         await ErrorHandler(self.bot, self.ctx, e, 'google', self.searchQuery)
       finally: return
 
 class UserCancel(Exception):

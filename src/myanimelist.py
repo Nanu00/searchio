@@ -16,12 +16,11 @@ class MyAnimeListSearch:
     
     async def search(self):
         try:
-            async with self.ctx.typing():
-                msg = [await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')]
-                await asyncio.sleep(random.uniform(0,1))
-                search = AnimeSearch(self.searchQuery)
+            msg = [await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')]
+            await asyncio.sleep(random.uniform(0,1))
+            search = AnimeSearch(self.searchQuery)
 
-                Log.appendToLog(self.ctx, "animesearch", self.searchQuery)
+            Log.appendToLog(self.ctx, "animesearch", self.searchQuery)
 
             while True:
                 result = [[anime for anime in search.results][x:x+10] for x in range(0, len([anime for anime in search.results]), 10)]
@@ -138,7 +137,7 @@ class MyAnimeListSearch:
                         emojitask.cancel()
 
         except Exception as e:
-            await ErrorHandler(self.bot, self.ctx, e)
+            await ErrorHandler(self.bot, self.ctx, e, 'anime', self.searchQuery)
         finally: return
 
 class UserCancel(Exception):

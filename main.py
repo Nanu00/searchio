@@ -2,7 +2,7 @@ from src.wikipedia import WikipediaSearch
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
-from src.utils import Sudo, Log
+from src.utils import Sudo, Log, ErrorHandler
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
 from dotenv import load_dotenv
@@ -81,105 +81,109 @@ async def on_command_error(ctx, error):
 
 @bot.command()
 async def help(ctx, *args):
-    def check(reaction, user):
-        return user == ctx.author and str(reaction.emoji) in ["🗑️"]
-    commandPrefix = printPrefix(ctx)
-    args = list(args)
-    
-    embed = discord.Embed(title="Help")
-    embed.add_field(name="Administration", inline=False, value=textwrap.dedent(f"""\
-        `  sudo:` Various admin commands. Usage: {commandPrefix}sudo [command] [args].
-        `  logs:` DMs a .csv of personal logs or guild logs if user is a sudoer. Usage: {commandPrefix}log
-        `config:` Views the guild settings. Requires sudo privileges to edit settings
-    """))
-    embed.add_field(name="Search Engines", inline=False, value=textwrap.dedent(f"""\
-        {"`wikipedia:` Search through Wikipedia." if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
-        {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
-        {"`   google:` Search through Google" if serverSettings[ctx.guild.id]['google'] == True else ''}
-        {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[ctx.guild.id]['google'] == True else ''}
-        {"`  scholar:` Search through Google Scholar" if serverSettings[ctx.guild.id]['scholar'] == True else ''}
-        {"`  youtube:` Search through Youtube" if serverSettings[ctx.guild.id]['youtube'] == True else ''}
-        {"`      mal:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
-    """))
-    embed.set_footer(text=f"Do {commandPrefix}help [command] for more information")
-
-    if args:
-        if args[0] == 'sudo':
-            embed = discord.Embed(title="Sudo", description=f"Admin commands. Server owner has sudo privilege by default.\nUsage: {commandPrefix}sudo [command] [args]")
-            embed.add_field(name="Commands", inline=False, value=
-                f"""`     echo:` Have the bot say something. 
-                    Args: message 
-                    Optional flag: --channel [channelID]
-
-                    `blacklist:` Block a user from using the bot. 
-                    Args: userName OR userID 
-
-                    `whitelist:` Unblock a user from using the bot. 
-                    Args: userName OR userID
-
-                    `   sudoer:` Add a user to the sudo list. Only guild owners can do this. 
-                    Args: userName OR userID  
-
-                    ` unsudoer:` Remove a user to the sudo list. Only guild owners can do this. 
-                    Args: userName OR userID""")
-        elif args[0] == 'log':
-            embed = discord.Embed(title="Log", description=
-                f"DMs a .csv file of all the logs that the bot has for your username or guild if a sudoer.\nUsage: {commandPrefix}log")  
-        elif args[0] == 'config':
-            embed = discord.Embed(title="Guild Configuration", description=f"Views the guild configuration. Only sudoers can edit settings.\nUsage: {commandPrefix}config")
-        elif args[0] == 'wiki':
-            embed = discord.Embed(title="Wikipedia", description=f"Wikipedia search. \nUsage: {commandPrefix}wiki [query] [flags]")
-            embed.add_field(name="Optional Flags", inline=False, value=
-                f"""`--lang [ISO Language Code]:` Specifies a country code to search through Wikipedia. Use {commandPrefix}wikilang to see available codes""")
-        elif args[0] == 'wikilang':
-            embed = discord.Embed(title="WikiLang", description=
-            """Lists Wikipedia's supported wikis in ISO codes. Common language codes are:
-                zh: 中文
-                es: Español
-                en: English
-                pt: Português
-                hi: हिन्दी
-                bn: বাংলা
-                ru: русский""")
-        elif args[0] == 'google':
-            embed = discord.Embed(title="Google", description=
-                f"Google search.\nUsage: {commandPrefix}google [query].\nIf a keyword is detected in [query], a special function will activate")
-            embed.add_field(name="Keywords", inline=False, value=
-            """`translate:` Uses Google Translate API to translate languages. 
-            Input automatically detects language unless specified with 'from [language]' 
-            Defaults to output English unless specified with 'to [language]'
-            Example Query: translate مرحبا from arabic to spanish""")
-        elif args[0] == 'image':
-            embed = discord.Embed(title="Google Image", description=
-                f"Uses Google's Reverse Image search to output URLs that contain the image.\nUsage: {commandPrefix}image [imageURL] OR reply to an image in the chat")
-        elif args[0] == 'scholar':
-            embed = discord.Embed(title="GoogleScholar", description=
-                f"Google Scholar search. \nUsage: {commandPrefix}scholar [query] [flags].")
-            embed.add_field(name="Flags", inline=False, value="""
-                `--author:` Use [query] to search for a specific author. Cannot be used with --cite
-                `  --cite:` Outputs a citation for [query] in BibTex. Cannot be used with --author""")        
-        elif args[0] == 'youtube':
-            embed = discord.Embed(title="Youtube", description=
-            f"Searches through Youtube videos.\nUsage: {commandPrefix}youtube [query].")
-        elif args[0] == 'anime':
-            embed = discord.Embed(title="MyAnimeList", description=
-            f"Searches through MyAnimeList\nUsage:{commandPrefix}anime [query]")
-        else: pass
-    else: pass
-    
-    helpMessage = await ctx.send(embed=embed)
     try:
-        await helpMessage.add_reaction('🗑️')
-        reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
-        if str(reaction.emoji) == '🗑️':
-            await helpMessage.delete()
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ["🗑️"]
+        commandPrefix = Sudo.printPrefix(ctx)
+        args = list(args)
+        
+        embed = discord.Embed(title="Help")
+        embed.add_field(name="Administration", inline=False, value=textwrap.dedent(f"""\
+            `  sudo:` Various admin commands. Usage: {commandPrefix}sudo [command] [args].
+            `  logs:` DMs a .csv of personal logs or guild logs if user is a sudoer. Usage: {commandPrefix}log
+            `config:` Views the guild settings. Requires sudo privileges to edit settings
+        """))
+        embed.add_field(name="Search Engines", inline=False, value=textwrap.dedent(f"""\
+            {"`wikipedia:` Search through Wikipedia." if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
+            {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
+            {"`   google:` Search through Google" if serverSettings[ctx.guild.id]['google'] == True else ''}
+            {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[ctx.guild.id]['google'] == True else ''}
+            {"`  scholar:` Search through Google Scholar" if serverSettings[ctx.guild.id]['scholar'] == True else ''}
+            {"`  youtube:` Search through Youtube" if serverSettings[ctx.guild.id]['youtube'] == True else ''}
+            {"`      mal:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
+        """))
+        embed.set_footer(text=f"Do {commandPrefix}help [command] for more information")
+
+        if args:
+            if args[0] == 'sudo':
+                embed = discord.Embed(title="Sudo", description=f"Admin commands. Server owner has sudo privilege by default.\nUsage: {commandPrefix}sudo [command] [args]")
+                embed.add_field(name="Commands", inline=False, value=
+                    f"""`     echo:` Have the bot say something. 
+                        Args: message 
+                        Optional flag: --channel [channelID]
+
+                        `blacklist:` Block a user from using the bot. 
+                        Args: userName OR userID 
+
+                        `whitelist:` Unblock a user from using the bot. 
+                        Args: userName OR userID
+
+                        `   sudoer:` Add a user to the sudo list. Only guild owners can do this. 
+                        Args: userName OR userID  
+
+                        ` unsudoer:` Remove a user to the sudo list. Only guild owners can do this. 
+                        Args: userName OR userID""")
+            elif args[0] == 'log':
+                embed = discord.Embed(title="Log", description=
+                    f"DMs a .csv file of all the logs that the bot has for your username or guild if a sudoer.\nUsage: {commandPrefix}log")  
+            elif args[0] == 'config':
+                embed = discord.Embed(title="Guild Configuration", description=f"Views the guild configuration. Only sudoers can edit settings.\nUsage: {commandPrefix}config")
+            elif args[0] == 'wiki':
+                embed = discord.Embed(title="Wikipedia", description=f"Wikipedia search. \nUsage: {commandPrefix}wiki [query] [flags]")
+                embed.add_field(name="Optional Flags", inline=False, value=
+                    f"""`--lang [ISO Language Code]:` Specifies a country code to search through Wikipedia. Use {commandPrefix}wikilang to see available codes""")
+            elif args[0] == 'wikilang':
+                embed = discord.Embed(title="WikiLang", description=
+                """Lists Wikipedia's supported wikis in ISO codes. Common language codes are:
+                    zh: 中文
+                    es: Español
+                    en: English
+                    pt: Português
+                    hi: हिन्दी
+                    bn: বাংলা
+                    ru: русский""")
+            elif args[0] == 'google':
+                embed = discord.Embed(title="Google", description=
+                    f"Google search.\nUsage: {commandPrefix}google [query].\nIf a keyword is detected in [query], a special function will activate")
+                embed.add_field(name="Keywords", inline=False, value=
+                """`translate:` Uses Google Translate API to translate languages. 
+                Input automatically detects language unless specified with 'from [language]' 
+                Defaults to output English unless specified with 'to [language]'
+                Example Query: translate مرحبا from arabic to spanish""")
+            elif args[0] == 'image':
+                embed = discord.Embed(title="Google Image", description=
+                    f"Uses Google's Reverse Image search to output URLs that contain the image.\nUsage: {commandPrefix}image [imageURL] OR reply to an image in the chat")
+            elif args[0] == 'scholar':
+                embed = discord.Embed(title="GoogleScholar", description=
+                    f"Google Scholar search. \nUsage: {commandPrefix}scholar [query] [flags].")
+                embed.add_field(name="Flags", inline=False, value="""
+                    `--author:` Use [query] to search for a specific author. Cannot be used with --cite
+                    `  --cite:` Outputs a citation for [query] in BibTex. Cannot be used with --author""")        
+            elif args[0] == 'youtube':
+                embed = discord.Embed(title="Youtube", description=
+                f"Searches through Youtube videos.\nUsage: {commandPrefix}youtube [query].")
+            elif args[0] == 'anime':
+                embed = discord.Embed(title="MyAnimeList", description=
+                f"Searches through MyAnimeList\nUsage:{commandPrefix}anime [query]")
+            else: pass
+        else: pass
+        
+        helpMessage = await ctx.send(embed=embed)
+        try:
+            await helpMessage.add_reaction('🗑️')
+            reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
+            if str(reaction.emoji) == '🗑️':
+                await helpMessage.delete()
+                return
+        
+        except asyncio.TimeoutError as e: 
+            await helpMessage.clear_reactions()
+        
+        finally: 
             return
     
-    except asyncio.TimeoutError as e: 
-        await helpMessage.clear_reactions()
-    
-    finally: 
-        return
+    except Exception as e:
+        ErrorHandler(bot, ctx, e, 'help', '')
 
 class SearchEngines(commands.Cog, name="Search Engines"):
     def __init__(self, bot):

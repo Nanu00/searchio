@@ -18,11 +18,11 @@ class WikipediaSearch:
     async def search(self):
         try:
             msg = [await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')]
-            async with self.ctx.typing():
-                await asyncio.sleep(random.uniform(0,2))
-                result = wikipedia.search(self.searchQuery)
 
-                Log.appendToLog(self.ctx, "wikisearch", self.searchQuery)
+            await asyncio.sleep(random.uniform(0,2))
+            result = wikipedia.search(self.searchQuery)
+
+            Log.appendToLog(self.ctx, "wikisearch", self.searchQuery)
 
             while True:
                 result = [result[x:x+10] for x in range(0, len(result), 10)]
@@ -150,7 +150,7 @@ class WikipediaSearch:
                         emojitask.cancel()
 
         except Exception as e:
-                await ErrorHandler(self.bot, self.ctx, e)
+                await ErrorHandler(self.bot, self.ctx, e, 'wiki', self.searchQuery)
         finally: return
 
     async def lang(self):
@@ -202,7 +202,7 @@ class WikipediaSearch:
                     break
         
         except Exception as e:
-                await ErrorHandler(self.bot, self.ctx, e)
+                await ErrorHandler(self.bot, self.ctx, e, 'wikilang', '')
         finally: return
 
 class UserCancel(Exception):
