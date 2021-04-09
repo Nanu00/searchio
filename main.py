@@ -121,7 +121,7 @@ async def help(ctx, *args):
                         `   sudoer:` Add a user to the sudo list. Only guild owners can do this. 
                         Args: userName OR userID  
 
-                        ` unsudoer:` Remove a user to the sudo list. Only guild owners can do this. 
+                        ` unsudoer:` Remove a user from the sudo list. Only guild owners can do this. 
                         Args: userName OR userID""")
             elif args[0] == 'log':
                 embed = discord.Embed(title="Log", description=
