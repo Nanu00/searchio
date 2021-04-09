@@ -44,10 +44,10 @@ Run main.py from commandline
   * The serverSettings.json (and by extension searchSettings attrib) are structured as follows:
   ```
     {
-    "guildID": {
-        "adminrole": "roleID" OR None,
-        "blacklist": ["userID"],
-        "sudoer": ["userID"],
+    guildID=int: {
+        "adminrole": roleID=int OR None,
+        "blacklist": [userID=int],
+        "sudoer": [userID=int],
         "safesearch": bool,
         "wikipedia": bool,
         "scholar": bool,
