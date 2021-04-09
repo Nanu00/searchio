@@ -12,7 +12,6 @@ iso-639 = "*"
 mal-api = "*"
 scholarly = "*"
 youtube-search = "*"
-lxml = "*"
 cryptography = "*"
 
 [dev-packages]
