@@ -8,3 +8,4 @@ logs.csv
 serverSettings.json
 scholar.log
 __pycache__/
+.python-version

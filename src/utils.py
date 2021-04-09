@@ -313,7 +313,7 @@ class Log():
             "User": ctx.author.id,
             "User_Plaintext": str(ctx.author),
             "Command": command,
-            "Args": ' '.join(list(args)).strip()
+            "Args": ''.join(list(args)).strip()
         }
         lines = []
         with open("logs.csv", "r+", encoding='utf-8-sig') as file:
