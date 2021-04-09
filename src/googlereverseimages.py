@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-from src.log import commandlog
-from src.errorhandling import ErrorHandler
+from src.utils import Log, ErrorHandler
 import requests, discord, random, asyncio
 
 class ImageSearch:
@@ -16,8 +15,7 @@ class ImageSearch:
 
     async def search(self): 
         try:       
-            log = commandlog(self.ctx, "imagesearch", self.searchQuery)
-            log.appendToLog()
+            Log.appendToLog(self.ctx, "imagesearch", self.searchQuery)
 
             headers = {
                         'Host': 'www.google.com',
@@ -61,8 +59,7 @@ class ImageSearch:
                     
                     result = await self.ctx.send(embed=embed)
 
-                    log = commandlog(self.ctx, "imagesearch result", f"{self.searchQuery}")
-                    log.appendToLog()
+                    Log.appendToLog(self.ctx, "imagesearch result", f"{self.searchQuery}")
 
                     def check(reaction, user):
                         return user == self.ctx.author and str(reaction.emoji) in ["🗑️"]
@@ -83,8 +80,7 @@ class ImageSearch:
 
                     result = await self.ctx.send(embed=embed)
 
-                    log = commandlog(self.ctx, "imagesearch result", f"no similar images")
-                    log.appendToLog()
+                    Log.appendToLog(self.ctx, "imagesearch result", f"no similar images")
 
                     def check(reaction, user):
                         return user == self.ctx.author and str(reaction.emoji) in ["🗑️"]

@@ -1,6 +1,5 @@
-from src.log import commandlog
+from src.utils import Log, ErrorHandler
 from src.loadingmessage import LoadingMessage
-from src.errorhandling import ErrorHandler
 import wikipedia, discord, asyncio, random
 
 class WikipediaSearch:
@@ -23,8 +22,7 @@ class WikipediaSearch:
                 await asyncio.sleep(random.uniform(0,2))
                 result = wikipedia.search(self.searchQuery)
 
-                log = commandlog(self.ctx, "wikisearch", self.searchQuery)
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "wikisearch", self.searchQuery)
 
             while True:
                 result = [result[x:x+10] for x in range(0, len(result), 10)]
@@ -96,8 +94,7 @@ class WikipediaSearch:
                                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                                 searchresult = await self.ctx.send(embed=embed)
                                 
-                                log = commandlog(self.ctx, "wikisearch result", f"{page.original_title}")
-                                log.appendToLog()
+                                Log.appendToLog(self.ctx, "wikisearch result", f"{page.original_title}")
 
                                 try:
                                     for message in msg:
@@ -127,8 +124,7 @@ class WikipediaSearch:
                                 break  
 
                     except UserCancel as e:
-                        log = commandlog(self.ctx, "wikisearch cancel")
-                        log.appendToLog()
+                        Log.appendToLog(self.ctx, "wikisearch cancel")
 
                         for message in msg:
                             await message.delete()
@@ -140,8 +136,7 @@ class WikipediaSearch:
                         for message in msg:
                             await message.delete()
 
-                        log = commandlog(self.ctx, "wikisearch timeout")
-                        log.appendToLog()
+                        Log.appendToLog(self.ctx, "wikisearch timeout")
 
                         await self.ctx.send(f"Search timed out. Aborting")
                         

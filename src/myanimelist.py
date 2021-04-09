@@ -1,7 +1,6 @@
 from mal import *
-from src.log import commandlog
+from src.utils import Log, ErrorHandler
 from src.loadingmessage import LoadingMessage
-from src.errorhandling import ErrorHandler
 import discord, asyncio, random
 
 class MyAnimeListSearch:
@@ -22,8 +21,7 @@ class MyAnimeListSearch:
                 await asyncio.sleep(random.uniform(0,1))
                 search = AnimeSearch(self.searchQuery)
 
-                log = commandlog(self.ctx, "animesearch", self.searchQuery)
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "animesearch", self.searchQuery)
 
             while True:
                 result = [[anime for anime in search.results][x:x+10] for x in range(0, len([anime for anime in search.results]), 10)]
@@ -101,8 +99,7 @@ class MyAnimeListSearch:
                             embed.set_footer(text=f"Requested by {self.ctx.author}")
                             searchresult = await self.ctx.send(embed=embed)
                             
-                            log = commandlog(self.ctx, "animesearch result", animeItem.title )
-                            log.appendToLog()
+                            Log.appendToLog(self.ctx, "animesearch result", animeItem.title )
                             for message in msg:
                                 await message.delete()
                             
@@ -121,8 +118,7 @@ class MyAnimeListSearch:
                                 return
                     
                     except UserCancel as e:
-                        log = commandlog(self.ctx, "animesearch cancel")
-                        log.appendToLog()
+                        Log.appendToLog(self.ctx, "animesearch cancel")
 
                         for message in msg:
                             await message.delete()
@@ -131,8 +127,7 @@ class MyAnimeListSearch:
                         for message in msg:
                             await message.delete()
 
-                        log = commandlog(self.ctx, "animesearch timeout")
-                        log.appendToLog()
+                        Log.appendToLog(self.ctx, "animesearch timeout")
 
                         await self.ctx.send(f"Search timed out. Aborting")
 

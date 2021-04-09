@@ -1,6 +1,5 @@
 from scholarly import scholarly
-from src.log import commandlog
-from src.errorhandling import ErrorHandler
+from src.utils import Log, ErrorHandler
 import discord, asyncio, random
 
 class ScholarSearch:
@@ -28,8 +27,7 @@ class ScholarSearch:
                 else: 
                     result = next(scholarly.search_pubs(self.searchQuery))
 
-            log = commandlog(self.ctx, "scholar", self.searchQuery)
-            log.appendToLog()
+            Log.appendToLog(self.ctx, "scholar", self.searchQuery)
 
             def check(reaction, user):
                 return user == self.ctx.author and str(reaction.emoji) in ["🗑️"]
@@ -42,8 +40,7 @@ class ScholarSearch:
                 {result}
                 ```""")
                 
-                log = commandlog(self.ctx, "scholar result", 'citation')
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "scholar result", 'citation')
 
                 try:
                     await searchresult.add_reaction('🗑️')
@@ -69,8 +66,7 @@ class ScholarSearch:
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 searchresult = await self.ctx.send(embed=embed)
                 
-                log = commandlog(self.ctx, "scholar result", result['name'])
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "scholar result", result['name'])
                 
                 try:
                     await searchresult.add_reaction('🗑️')
@@ -99,8 +95,7 @@ class ScholarSearch:
                 embed.set_footer(text=f"Requested by {self.ctx.author}")
                 searchresult = await self.ctx.send(embed=embed)
                 
-                log = commandlog(self.ctx, "scholar result", result['bib']['title'])
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "scholar result", result['bib']['title'])
                 
                 try:
                     await searchresult.add_reaction('🗑️')

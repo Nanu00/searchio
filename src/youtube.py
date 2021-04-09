@@ -1,6 +1,5 @@
 from youtube_search import YoutubeSearch as ytsearch
-from src.log import commandlog
-from src.errorhandling import ErrorHandler 
+from src.utils import Log, ErrorHandler
 import discord, asyncio, random
 
 class YoutubeSearch:
@@ -27,8 +26,7 @@ class YoutubeSearch:
                     await self.ctx.send(f"Error: {e}\nAborted.")
                     return
 
-                log = commandlog(self.ctx, "ytsearch", self.searchQuery)
-                log.appendToLog()
+                Log.appendToLog(self.ctx, "ytsearch", self.searchQuery)
                 
                 embed=discord.Embed(title=f"Titles matching '{self.searchQuery}':", description=
                     ''.join([f'[{index}]: {value}\n' for index, value in enumerate(resultTitles)]))
@@ -48,8 +46,7 @@ class YoutubeSearch:
                         continue
                     else:
                         result = result[int(input.content)]
-                        log = commandlog(self.ctx, "ytsearch", result['title'])
-                        log.appendToLog()
+                        Log.appendToLog(self.ctx, "ytsearch", result['title'])
 
                         for message in msg:
                             await message.delete()

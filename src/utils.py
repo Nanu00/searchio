@@ -1,5 +1,6 @@
-from src.errorhandling import ErrorHandler
-import discord, asyncio, json, textwrap, difflib
+import datetime as dt
+from datetime import datetime
+import discord, asyncio, json, textwrap, difflib, csv, os, random, traceback
 
 class Sudo:
     def __init__(
@@ -32,8 +33,6 @@ class Sudo:
         
         return serverSettings
         
-
-
     @staticmethod
     def isSudoer(bot, ctx, serverSettings=None):
         if serverSettings == None:
@@ -55,13 +54,11 @@ class Sudo:
         except: pass
         finally: return any([isOwner, isServerOwner, hasAdmin, isSudoer])
 
-    async def printPrefix(self):
-        try:
-            if self.ctx == None or self.ctx.guild == None:
-                return '&'
-            else: return self.serverSettings[self.ctx.guild.id]['commandprefix']
-        except Exception as e:
-            await ErrorHandler(self.bot, self.ctx, e)
+    @staticmethod
+    def printPrefix(serverSettings, ctx=None):
+        if ctx == None or ctx.guild == None:
+            return '&'
+        else: return serverSettings[ctx.guild.id]['commandprefix']
 
     async def userSearch(self, search):
         try:
@@ -170,7 +167,7 @@ class Sudo:
                     `   Google:` {'✅' if self.serverSettings[self.ctx.guild.id]['google'] == True else '❌'}
                     `      MAL:` {'✅' if self.serverSettings[self.ctx.guild.id]['mal'] == True else '❌'}
                     `  Youtube:` {'✅' if self.serverSettings[self.ctx.guild.id]['youtube'] == True else '❌'}""")
-                embed.set_footer(text=f"Do {await self.printPrefix()}config [setting] to change a specific setting")
+                embed.set_footer(text=f"Do {self.printPrefix(self.serverSettings)}config [setting] to change a specific setting")
                 await self.ctx.send(embed=embed)
             elif args[0].lower() in ['wikipedia', 'scholar', 'google', 'myanimelist', 'youtube', 'safesearch']:
                 embed = discord.Embed(title=args[0].capitalize(), description=f"{'✅' if self.serverSettings[self.ctx.guild.id][args[0].lower()] == True else '❌'}")
@@ -300,3 +297,109 @@ class Sudo:
             with open('serverSettings.json', 'w') as data:
                 data.write(json.dumps(self.serverSettings, indent=4))
             return
+
+class Log():
+
+    @staticmethod
+    def appendToLog(ctx, command, args=[]):
+        logFieldnames = ["Time", "Guild", "User", "User_Plaintext", "Command", "Args"]
+        guild = "DM"
+        if ctx.guild.id:
+            guild = ctx.guild.id
+        
+        logDict = {
+            "Time": datetime.utcnow().isoformat(),
+            "Guild": guild,
+            "User": ctx.author.id,
+            "User_Plaintext": str(ctx.author),
+            "Command": command,
+            "Args": ' '.join(list(args)).strip()
+        }
+        lines = []
+        with open("logs.csv", "r+", encoding='utf-8-sig') as file:
+            for row in csv.DictReader(file):
+                logTime = datetime.fromisoformat(row["Time"])
+                if datetime.utcnow()-logTime < dt.timedelta(weeks=4):
+                    lines.append(row)
+        
+        with open("logs.csv", "w", newline='', encoding='utf-8-sig') as file:
+            writer = csv.DictWriter(file, fieldnames=logFieldnames)
+            writer.writeheader()
+            for items in lines:
+                writer.writerow(items)
+            writer.writerow(logDict)              
+        return
+    
+    @staticmethod
+    async def logRequest(bot, ctx, serverSettings):
+        logFieldnames = ["Time", "Guild", "User", "User_Plaintext", "Command", "Args"]
+        
+        #if bot owner
+        if await bot.is_owner(ctx.author):
+            dm = await ctx.author.create_dm()
+            await dm.send(file=discord.File(r'logs.csv'))
+            return
+    
+        #if guild owner/guild sudoer
+        elif Sudo.isSudoer(bot, ctx, serverSettings):
+            try:
+                with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+                    for line in csv.DictReader(file): 
+                        if int(line["Guild"]) == ctx.guild.id:
+                            with open(f"./src/cache/{ctx.guild}_guildLogs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                                writer = csv.DictWriter(newFile, fieldnames=logFieldnames)
+                                writer.writerow(line)
+
+                dm = await ctx.author.create_dm()
+                await dm.send(file=discord.File(f"./src/cache/{ctx.guild}_guildLogs.csv"))
+                os.remove(f"./src/cache/{ctx.guild}_guildLogs.csv")
+            
+            except Exception as e:
+                print(e)
+            
+            finally: 
+                return
+        
+        #else just bot user
+        else:
+            try:
+                with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+                    for line in csv.DictReader(file): 
+                        if int(line["User"]) == ctx.author.id:
+                            with open(f"./src/cache/{ctx.author}_personalLogs.csv", "a+", newline='', encoding='utf-8-sig') as newFile:
+                                writer = csv.DictWriter(newFile, fieldnames=logFieldnames)
+                                writer.writerow(line)
+
+                dm = await ctx.author.create_dm()
+                await dm.send(file=discord.File(f"./src/cache/{ctx.author}_personalLogs.csv"))
+                os.remove(f"./src/cache/{ctx.author}_personalLogs.csv")
+            
+            except Exception as e:
+                print(e)
+            
+            finally: 
+                return
+
+async def ErrorHandler(bot, ctx, error):
+    with open("logs.csv", 'r', encoding='utf-8-sig') as file: 
+        doesErrorCodeMatch = False
+        errorCode = "%06x" % random.randint(0, 0xFFFFFF)
+        while doesErrorCodeMatch == False:
+            for line in csv.DictReader(file): 
+                if line["Command"] == error:
+                    if line["Args"] == errorCode:
+                        doesErrorCodeMatch = True
+                        errorCode = "%06x" % random.randint(0, 0xFFFFFF)
+                        pass
+            break
+    
+    Log.appendToLog(ctx, "error", errorCode)
+    
+    errorLoggingChannel = await bot.fetch_channel(829172391557070878)
+    await errorLoggingChannel.send(f"```Error {errorCode}\nIn Guild: {ctx.guild.id}:\n{traceback.format_exc()}```")
+
+    embed = discord.Embed(description=f"An unknown error has occured. Please try again later. \nError Code {errorCode}")
+    errorMsg = await ctx.send(embed=embed)
+    asyncio.sleep(60)
+    await errorMsg.delete()
+    return

@@ -1,9 +1,8 @@
 from warnings import WarningMessage
-from src.log import commandlog
+from src.utils import Log, ErrorHandler
 from bs4 import BeautifulSoup
 from google_trans_new import google_translator
 from src.loadingmessage import LoadingMessage
-from src.errorhandling import ErrorHandler
 from iso639 import languages as Languages
 import asyncio, discord, urllib3, re, random
 
@@ -26,14 +25,9 @@ class GoogleSearch:
             return user == self.ctx.author and str(reaction.emoji) in ["🔍", "🗑️"]
 
          def linkUnicodeParse(link: str):
-            for linkIndex in [i for i, ltr in enumerate(link) if ltr == "%"]: #replaces Unicode codepoints w/ characters
-               character = chr(int(link[linkIndex+1:linkIndex+3], 16))
-               link = link[:linkIndex] + f'{character}  ' + link[linkIndex+3:]
-               
-            return link.replace(" ", "")
+            return re.sub(r"%(.{2})",lambda m: chr(int(m.group(1),16)),link)
          
-         log = commandlog(self.ctx, "googlesearch", self.searchQuery)
-         log.appendToLog()
+         Log.appendToLog(self.ctx, "googlesearch", self.searchQuery)
 
          if bool(re.search('^translate', self.searchQuery.lower())):
             query = self.searchQuery.lower().split(' ')
@@ -83,19 +77,29 @@ class GoogleSearch:
             await asyncio.sleep(random.uniform(0,2))
             http = urllib3.PoolManager()
             url = ("https://google.com/search?pws=0&q=" + 
-               self.searchQuery.replace(" ", "+") + 
-               f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=1{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
+               self.searchQuery.replace(" ", "+") + "+-stock"
+               f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=5{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
             response = http.request('GET', url)
             soup = BeautifulSoup(response.data, features="lxml")
             result_number = 3
             google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
 
             breaklines = ["People also search for", "Episodes"]
-            wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "www.shutterstock.com ", "Related searches", "Top stories", 'People also ask' ] # fuck shutterstock the filter doesn't even work atm
+            wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "Related searches", "Top stories", 'People also ask' ]
 
-         log = commandlog(self.ctx, "googlesearch results", url)
-         log.appendToLog()
+         Log.appendToLog(self.ctx, "googlesearch results", url)
 
+         foundImage = True
+         if bool(re.search('^image', self.searchQuery.lower())):
+            while 'Images' not in google_snippet_result.strings:
+               result_number +=1
+               google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
+
+               if result_number < len(soup.find("div", {"id": "main"}).contents)-1:
+                  result_number = 3
+                  foundImage = False
+                  break
+         
          while any(map(lambda wrong_first_result: wrong_first_result in google_snippet_result.strings, wrong_first_results)):
             result_number+=1
             google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
@@ -113,12 +117,13 @@ class GoogleSearch:
             else:
                break
 
-         embed = discord.Embed(title="Search results for: "+self.searchQuery[:233] + ("..." if len(self.searchQuery) > 233 else ""), description = re.sub("\n\n+", "\n\n", printstring))
+         embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}', 
+            description = "{}".format('' if foundImage else 'No image found. Defaulting to first result:\n\n') + re.sub("\n\n+", "\n\n", printstring))
          print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
          image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result.
-         # image = google_snippet_result.find("a")
          
-         if image is not None:  # tries to add an image to the embed
+         # tries to add an image to the embed
+         if image is not None: 
             try:
                imgurl = linkUnicodeParse(re.findall("(?<=imgurl=).*(?=&imgrefurl)", image.parent.parent["href"])[0])
                if "encrypted" in imgurl:
@@ -130,15 +135,13 @@ class GoogleSearch:
                else:
                      embed.set_thumbnail(url=imgurl)
             except:
-               print(" loading image failed")
+               foundImage = False
 
-         link_list = [a for a in google_snippet_result.findAll("a", href_="") if not a.find("img")]
-         
-         if len(link_list) != 0:  # tries to add a link to the embed
-            # this adds a broken link for youtube videos :/ no fix afaik so just don't send link when youtube
+         # tries to add a link to the embed
+         link_list = [a for a in google_snippet_result.findAll("a", href_="") if not a.find("img")] 
+         if len(link_list) != 0: 
             try:
                link = linkUnicodeParse(re.findall("(?<=url\?q=).*(?=&sa)", link_list[0]["href"])[0])
-
                embed.add_field(name="Relevant Link", value=link)
                print(" link: " + link)
             except:
@@ -158,8 +161,8 @@ class GoogleSearch:
             await message.clear_reactions()
 
       except Exception as e:
-         await ErrorHandler(self.bot, self.ctx, e)
          await message.delete()
+         await ErrorHandler(self.bot, self.ctx, e)
       finally: return
 
 class UserCancel(Exception):

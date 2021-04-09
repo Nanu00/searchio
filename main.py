@@ -1,16 +1,13 @@
-from src.log import commandlog
 from src.wikipedia import WikipediaSearch
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
-from src.sudo import Sudo
+from src.utils import Sudo, Log
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
 from dotenv import load_dotenv
-from discord import Webhook, AsyncWebhookAdapter
 from discord.ext import commands
-from discord.embeds import Embed
-import discord, re, os, asyncio, json, aiohttp, textwrap
+import discord, os, asyncio, json, textwrap
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -21,14 +18,9 @@ with open('serverSettings.json', 'r') as data:
 def prefix(bot, message):
     try:
         commandprefix = serverSettings[message.guild.id]['commandprefix']
-    except Exception as e:
+    except Exception:
         commandprefix = '&'
     finally: return commandprefix
-
-def printPrefix(ctx=None):
-    if ctx == None or ctx.guild == None:
-        return '&'
-    else: return serverSettings[ctx.guild.id]['commandprefix']
 
 intents = discord.Intents.default()
 intents.members = True
@@ -85,7 +77,7 @@ async def on_connect():
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandNotFound):
-        await ctx.send(f"Command not found. Do {printPrefix(ctx)}help for available commands")
+        await ctx.send(f"Command not found. Do {Sudo.printPrefix(serverSettings, ctx)}help for available commands")
 
 @bot.command()
 async def help(ctx, *args):
@@ -226,8 +218,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def wikilang(self, ctx):
         global serverSettings
         if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist']:
-            log = commandlog(ctx, "wikilang")
-            log.appendToLog()
+            Log.appendToLog(ctx, 'wikilang')
 
             await WikipediaSearch(bot, ctx, "en").lang()
             return
@@ -368,9 +359,8 @@ class Administration(commands.Cog, name="Administration"):
     
     @commands.command(name='log')
     async def logging(self, ctx): 
-        log = commandlog(ctx, "log")
-        log.appendToLog()
-        await log.logRequest(bot, serverSettings)
+        Log.appendToLog(ctx, 'log')
+        await Log.logRequest(bot, ctx, serverSettings)
         return
 
     @commands.command(name='sudo')
@@ -379,11 +369,9 @@ class Administration(commands.Cog, name="Administration"):
         args = list(args)
         if Sudo.isSudoer(bot, ctx, serverSettings) == False:
             await ctx.send(f"{ctx.author} is not in the sudoers file.  This incident will be reported.")
-            log = commandlog(ctx, "sudo", 'unauthorised')
-            log.appendToLog()
+            Log.appendToLog(ctx, 'sudo', 'unauthorised')
         else:
-            log = commandlog(ctx, "sudo", ' '.join(args).strip())
-            log.appendToLog()
+            Log.appendToLog(ctx, "sudo", ' '.join(args).strip())
             command = Sudo(bot, ctx, serverSettings)
             await command.sudo(args)
 

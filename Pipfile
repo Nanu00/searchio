@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-dotenv = "*"
+"discord.py" = "*"
+wikipedia = "*"
+google-trans-new = "*"
+iso-639 = "*"
+mal-api = "*"
+scholarly = "*"
+youtube-search = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
