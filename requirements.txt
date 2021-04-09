@@ -9,6 +9,7 @@ bibtexparser==1.2.0
 certifi==2020.12.5
 cffi==1.14.5
 chardet==4.0.0
+click==7.1.2
 colorama==0.4.4
 cryptography==3.4.7
 discord.py==1.7.1
@@ -26,6 +27,8 @@ mal-api==0.4.0
 MarkupSafe==1.1.1
 multidict==5.1.0
 packaging==20.9
+pep517==0.10.0
+pip-tools==6.0.1
 pycparser==2.20
 Pygments==2.8.1
 pyOpenSSL==20.0.1
@@ -49,6 +52,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 stem==1.8.0
+toml==0.10.2
 typing-extensions==3.7.4.3
 urllib3==1.26.4
 wikipedia==1.4.0
