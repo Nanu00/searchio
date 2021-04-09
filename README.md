@@ -1,5 +1,5 @@
-# wikipediasearch
-A Wikipedia article search engine implemented in Python
+# Search.IO
+A Discord bot search engine implemented in Python
 
 ## To use:
 
@@ -8,16 +8,14 @@ Install requirements with:
 pip install -r requirements.txt
 ```
 
-Obtain Discord bot credentials and place in a file named .env in the same directory as main.py 
-
-* Syntax: `DISCORD_TOKEN = [copy paste token]`
+Obtain Discord bot credentials and place in a .env file in the same directory as main.py 
+`DISCORD_TOKEN = [copy paste token]`
 
 Run main.py from commandline
 
 
 ## To develop:
-  Create a pull request.
-  
+
   All search modules are imported from ./src
   
   The modules each have the ability to send messages using discord.py.
@@ -29,16 +27,20 @@ Run main.py from commandline
   * Each module is required to be hooked up to the logging system
     * This can be done via:
     ```
-    log = commandlog(self.ctx, "command", "any optional args (ex: search term)")
-    log.appendToLog()
+    Log.appendToLog(ctx=discord.ext.commands.Context, command=str, args=str OR list)
     ```
-  * The required instance variables are:
-    * self.bot (Discord.py Bot object)
-    * self.searchQuery (The user search query)
-    * OPTIONAL: self.searchSettings (guild-specific settings)
-  * **Any edits to main.py will be rejected.** I will integrate the modules. Please have sufficient documentation for the module.
+  * The required instance attributes are:
+  ```
+    bot=discord.ext.commands.Bot
+    ctx=discord.ext.commands.Context
+    searchQuery=str
+  ```
+  * Optional instance attributes are:
+  ```
+    searchSettings=dict
+  ```
 
-  * The serverSettings.json is structured as follows:
+  * The serverSettings.json (and by extension searchSettings attrib) are structured as follows:
   ```
     {
     "guildID": {
