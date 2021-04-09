@@ -12,7 +12,7 @@ Obtain Discord bot credentials and place in a .env file in the same directory as
 
 `DISCORD_TOKEN = [copy paste token]`
 
-Run main.py from commandline
+Run main.py
 
 
 ## To develop:
