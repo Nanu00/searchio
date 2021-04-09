@@ -9,6 +9,7 @@ pip install -r requirements.txt
 ```
 
 Obtain Discord bot credentials and place in a .env file in the same directory as main.py 
+
 `DISCORD_TOKEN = [copy paste token]`
 
 Run main.py from commandline
