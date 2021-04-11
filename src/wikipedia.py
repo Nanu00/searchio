@@ -79,6 +79,7 @@ class WikipediaSearch:
                                 # backwards on the first page
                         
                         elif responsetask in done:
+                            emojitask.cancel()
                             input = responsetask.result() 
                             await input.delete()
                             if input.content == 'cancel':
@@ -101,8 +102,6 @@ class WikipediaSearch:
                                         await message.delete()
                                 except:
                                     pass
-
-                                emojitask.cancel()
                                 
                                 try:
                                     await searchresult.add_reaction('🗑️')
@@ -128,9 +127,6 @@ class WikipediaSearch:
 
                         for message in msg:
                             await message.delete()
-
-                        emojitask.cancel()
-                        return
                     
                     except asyncio.TimeoutError:
                         for message in msg:
@@ -139,15 +135,12 @@ class WikipediaSearch:
                         Log.appendToLog(self.ctx, "wikisearch timeout")
 
                         await self.ctx.send(f"Search timed out. Aborting")
-                        
-                        emojitask.cancel()
-                        return
 
                     except Exception as e:
                         for message in msg:
                             await message.delete()
                     finally:    
-                        emojitask.cancel()
+                        return
 
         except Exception as e:
                 await ErrorHandler(self.bot, self.ctx, e, 'wiki', self.searchQuery)

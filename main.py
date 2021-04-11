@@ -2,12 +2,13 @@ from src.wikipedia import WikipediaSearch
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
+from src.loadingmessage import LoadingMessage
 from src.utils import Sudo, Log, ErrorHandler
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
 from dotenv import load_dotenv
 from discord.ext import commands
-import discord, os, asyncio, json, textwrap
+import discord, os, asyncio, json, textwrap, difflib
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -35,19 +36,24 @@ async def on_guild_join(guild):
 
     owner = await bot.fetch_user(guild.owner_id)
     dm = await owner.create_dm()
+    appInfo = await bot.application_info()
+
     embed = discord.Embed(title=f"Search.io was added to your server: '{guild.name}'.", 
         description = f"""
     Search.io is a bot that searches through multiple search engines/APIs.
     The activation command is '&', and a list of various commands can be found using '&help'.
             
     A list of admin commands can be found by using '&help sudo'. These commands may need ID numbers, which requires Developer Mode.
-    To turn on Developer Mode, go to Settings > Appearances > Advanced > Developer Mode. Then right click on users, roles, or channels to copy ID.
-
-    As a start, it is suggested to designate an administrator role that can use Search.io's sudo commands. Do '&sudo adminrole [roleID]' to designate an admin role.
-    It is also suggested to turn on Safe Search, if needed. Do '&sudo safesearch [on/off]'. The default is off. 
+    To turn on Developer Mode, go to Settings > Appearances > Advanced > Developer Mode. Then right click on users, roles, channels, or guilds to copy their ID.
     If you need to block a specific user from using Search.io, do '&sudo blacklist [userID]'. Unblock with '&sudo whitelist [userID]'
 
-    If you have any problems with Search.io, DM ACEslava#9735""")
+    Guild-specific settings can be accessed with '&config'
+    As a start, it is suggested to designate an administrator role that can use Search.io's sudo commands. Do '&config adminrole [roleID]' to designate an admin role.
+    You can change the command prefix with '&config prefix [character]'
+    You can also block or unblock specific commands with '&config [command]'
+    It is also suggested to turn on Safe Search, if needed. Do '&config safesearch'. The default is off. 
+
+    If you have any problems with Search.io, DM {str(appInfo.owner)}""")
     await dm.send(embed=embed)
     return
 
@@ -247,10 +253,43 @@ class SearchEngines(commands.Cog, name="Search Engines"):
             else: 
                 args = list(args)
                 userquery = ' '.join(args).strip() #turns multiword search into single string.
+            
+            continueLoop = True
+            
+            while continueLoop==True:
+                try:
+                    message = await ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
+                    messageEdit = asyncio.create_task(self.bot.wait_for('message_edit', check=lambda var, m: m.author == ctx.author, timeout=60))
+                    search = asyncio.create_task(GoogleSearch.search(bot, ctx, serverSettings, message, userquery))
+                    #checks for message edit
+                    waiting = [messageEdit, search]
+                    done, waiting = await asyncio.wait(waiting, return_when=asyncio.FIRST_COMPLETED) # 30 seconds wait either reply or react
 
-            search = GoogleSearch(bot, ctx, serverSettings, userquery)
-            await search.search()
-            return
+                    if messageEdit in done:
+                        if type(messageEdit.exception()) == asyncio.TimeoutError:
+                            raise asyncio.TimeoutError
+                        await message.delete()
+                        messageEdit.cancel()
+                        search.cancel()
+
+                        messageEdit = messageEdit.result()
+                        userquery = messageEdit[1].content.replace('&google ', '')
+                        continue
+                    else: raise asyncio.TimeoutError
+                
+                except asyncio.TimeoutError: 
+                    await message.clear_reactions()
+                    messageEdit.cancel()
+                    search.cancel()
+                    continueLoop = False
+                    return
+                
+                except asyncio.CancelledError:
+                    pass
+                
+                except Exception as e:
+                    await ErrorHandler(bot, ctx, e, 'google', userquery)
+                    return
 
     @commands.command(name='image')
     async def image(self, ctx, *args):

@@ -7,30 +7,19 @@ from iso639 import languages as Languages
 import asyncio, discord, urllib3, re, random
 
 class GoogleSearch:
-   def __init__(
-      self,
-      bot,
-      ctx,
-      serverSettings,
-      searchQuery = None):
-
-      self.searchQuery = searchQuery
-      self.bot = bot
-      self.ctx = ctx
-      self.serverSettings = serverSettings
-
-   async def search(self):
+   @staticmethod
+   async def search(bot, ctx, serverSettings, message, searchQuery=None):
       try:
          def check(reaction, user):
-            return user == self.ctx.author and str(reaction.emoji) in ["🔍", "🗑️"]
+            return user == ctx.author and str(reaction.emoji) in ["🔍", "🗑️"]
 
          def linkUnicodeParse(link: str):
             return re.sub(r"%(.{2})",lambda m: chr(int(m.group(1),16)),link)
          
-         Log.appendToLog(self.ctx, "googlesearch", self.searchQuery)
+         Log.appendToLog(ctx, "googlesearch", searchQuery)
 
-         if bool(re.search('^translate', self.searchQuery.lower())):
-            query = self.searchQuery.lower().split(' ')
+         if bool(re.search('^translate', searchQuery.lower())):
+            query = searchQuery.lower().split(' ')
             if len(query) > 1:
                del query[0]
                if "to" in query:
@@ -53,32 +42,30 @@ class GoogleSearch:
                   embed = discord.Embed(title=f"{Languages.get(alpha2=srcLanguage).name if srcLanguage != None else translator.detect(query)[1].capitalize()} " +
                      f"to {Languages.get(part1=destLanguage).name} Translation", 
                      description = result + '\n\nReact with 🔍 to search Google')
-                  embed.set_footer(text=f"Requested by {self.ctx.author}")
-                  searchresult = await self.ctx.send(embed=embed)
-                  await searchresult.add_reaction('🗑️')
-                  await searchresult.add_reaction('🔍')
-                  reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
+                  embed.set_footer(text=f"Requested by {ctx.author}")
+                  await message.edit(content=None, embed=embed)
+                  await message.add_reaction('🗑️')
+                  await message.add_reaction('🔍')
+                  reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
                   if str(reaction.emoji) == '🗑️':
-                     await searchresult.delete()
-                     return
+                     await message.delete()
                   
                   elif str(reaction.emoji) == '🔍':
-                     await searchresult.delete()
+                     await message.delete()
                      pass
                
                except asyncio.TimeoutError: 
-                  await searchresult.clear_reactions()
-                  return
+                  pass
                except Exception as e:
-                  await self.ctx.send(f"Error: {e}")
-                  return
+                  await message.delete()
+                  await ErrorHandler(bot, ctx, e, 'google', searchQuery)
+               finally: return
                   
-         message = await self.ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
          await asyncio.sleep(random.uniform(0,2))
          http = urllib3.PoolManager()
          url = ("https://google.com/search?pws=0&q=" + 
-            self.searchQuery.replace(" ", "+") + "+-stock+-pinterest"
-            f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=5{'&safe=active' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else ''}")
+            searchQuery.replace(" ", "+") + "+-stock+-pinterest"
+            f"&uule=w+CAIQICI5TW91bnRhaW4gVmlldyxTYW50YSBDbGFyYSBDb3VudHksQ2FsaWZvcm5pYSxVbml0ZWQgU3RhdGVz&num=5{'&safe=active' if serverSettings[ctx.guild.id]['safesearch'] == True else ''}")
          response = http.request('GET', url)
          soup = BeautifulSoup(response.data, features="lxml")
          result_number = 3
@@ -90,10 +77,10 @@ class GoogleSearch:
             breaklines = ["People also search for", "Episodes"]
             wrong_first_results = ["Did you mean: ", "Showing results for ", "Tip: ", "See results about", "Including results for ", "Related searches", "Top stories", 'People also ask' ]
 
-            Log.appendToLog(self.ctx, "googlesearch results", url)
+            Log.appendToLog(ctx, "googlesearch results", url)
 
             
-            if bool(re.search('^image', self.searchQuery.lower())):
+            if bool(re.search('^image', searchQuery.lower())):
                while 'Images' not in google_snippet_result.strings:
                   result_number +=1
                   google_snippet_result = soup.find("div", {"id": "main"}).contents[result_number]
@@ -120,9 +107,9 @@ class GoogleSearch:
                else:
                   break
 
-            embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}', 
+            embed = discord.Embed(title=f'Search results for: {searchQuery[:233]}{"..." if len(searchQuery) > 233 else ""}', 
                description = "{}".format('' if foundImage else 'No image found. Defaulting to first result:\n\n') + re.sub("\n\n+", "\n\n", printstring))
-            print(self.ctx.author.name + " searched for: "+self.searchQuery[:233])
+            print(ctx.author.name + " searched for: "+searchQuery[:233])
             image = google_snippet_result.find("img")  # can also be done for full html (soup) with about same result.
             
             # tries to add an image to the embed
@@ -152,23 +139,26 @@ class GoogleSearch:
             embed.url = url
          
          else:
-            embed = discord.Embed(title=f'Search results for: {self.searchQuery[:233]}{"..." if len(self.searchQuery) > 233 else ""}',
+            embed = discord.Embed(title=f'Search results for: {searchQuery[:233]}{"..." if len(searchQuery) > 233 else ""}',
                description = 'No results found')
          
-         embed.set_footer(text=f"Requested by {self.ctx.author}")
+         embed.set_footer(text=f"Requested by {ctx.author}")
          await message.edit(content=None, embed=embed)
          try:
             await message.add_reaction('🗑️')
-            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
+            reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
             if str(reaction.emoji) == '🗑️':
                await message.delete()
                 
          except asyncio.TimeoutError as e: 
-            await message.clear_reactions()
+            pass
 
+      except asyncio.CancelledError:
+         pass
+      
       except Exception as e:
          await message.delete()
-         await ErrorHandler(self.bot, self.ctx, e, 'google', self.searchQuery)
+         await ErrorHandler(bot, ctx, e, 'google', searchQuery)
       finally: return
 
 class UserCancel(Exception):

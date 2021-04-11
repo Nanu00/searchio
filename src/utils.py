@@ -219,13 +219,17 @@ class Sudo:
                             done, waiting = await asyncio.wait(waiting, return_when=asyncio.FIRST_COMPLETED) # 30 seconds wait either reply or react
 
                             if messageEdit in done:
+                                reply.cancel()
                                 messageEdit = messageEdit.result()
                                 response = ''.join([li for li in difflib.ndiff(messageEdit[0].content, messageEdit[1].content) if '+' in li]).replace('+ ', '')
                             elif reply in done:
+                                messageEdit.cancel()
                                 reply = reply.result()
                                 await reply.delete()
                                 
                                 if reply.content == "cancel":
+                                    messageEdit.cancel()
+                                    reply.cancel()
                                     break
                                 else: response = reply.content
                             await errorMsg.delete()

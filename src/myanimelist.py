@@ -77,6 +77,7 @@ class MyAnimeListSearch:
                                 # backwards on the first page
                         
                         elif responsetask in done:
+                            emojitask.cancel()
                             input = responsetask.result() 
                             await input.delete()
                             if input.content == 'cancel':
@@ -107,13 +108,11 @@ class MyAnimeListSearch:
                                 reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=60)
                                 if str(reaction.emoji) == '🗑️':
                                     await searchresult.delete()
-                                    return
                             
                             except asyncio.TimeoutError as e: 
                                 await searchresult.clear_reactions()
                             
                             finally: 
-                                emojitask.cancel()
                                 return
                     
                     except UserCancel as e:
@@ -134,7 +133,7 @@ class MyAnimeListSearch:
                         for message in msg:
                             await message.delete()
                     finally:
-                        emojitask.cancel()
+                        return
 
         except Exception as e:
             await ErrorHandler(self.bot, self.ctx, e, 'anime', self.searchQuery)
