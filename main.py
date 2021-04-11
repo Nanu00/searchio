@@ -6,6 +6,7 @@ from src.loadingmessage import LoadingMessage
 from src.utils import Sudo, Log, ErrorHandler
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
+from src.xkcd import XKCDSearch
 from dotenv import load_dotenv
 from discord.ext import commands
 import discord, os, asyncio, json, textwrap, difflib
@@ -396,6 +397,28 @@ class SearchEngines(commands.Cog, name="Search Engines"):
             await search.search()
             return
 
+    @commands.command(name = 'xkcd')
+    async def xkcdsearch(self, ctx, *args):
+        global serverSettings
+        UserCancel = Exception
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['mal'] != False:
+            if not args: #checks if search is empty
+                await ctx.send("Enter search query or cancel") #if empty, asks user for search query
+                try:
+                    userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                    userquery = userquery.content
+                    if userquery.lower() == 'cancel': raise UserCancel
+                
+                except asyncio.TimeoutError:
+                    await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+                except UserCancel:
+                    await ctx.send('Aborting')
+            else: 
+                userquery = ' '.join(args).strip() #turns multiword search into single string
+            
+            await XKCDSearch.search(bot, ctx, userquery)
+            return
 class Administration(commands.Cog, name="Administration"):
     def __init__(self, bot):
         self.bot = bot
