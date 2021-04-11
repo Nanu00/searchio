@@ -107,7 +107,8 @@ async def help(ctx, *args):
             {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[ctx.guild.id]['google'] == True else ''}
             {"`  scholar:` Search through Google Scholar" if serverSettings[ctx.guild.id]['scholar'] == True else ''}
             {"`  youtube:` Search through Youtube" if serverSettings[ctx.guild.id]['youtube'] == True else ''}
-            {"`      mal:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
+            {"`    anime:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
+            {"`     xkcd:` Search for XKCD comics" if serverSettings[ctx.guild.id]['xkcd'] == True else ''}
         """))
         embed.set_footer(text=f"Do {commandPrefix}help [command] for more information")
 
@@ -172,6 +173,9 @@ async def help(ctx, *args):
             elif args[0] == 'anime':
                 embed = discord.Embed(title="MyAnimeList", description=
                 f"Searches through MyAnimeList\nUsage:{commandPrefix}anime [query]")
+            elif args[0] == 'xkcd':
+                embed = discord.Embed(title="XKCD", description=
+                f"Searches for an XKCD comic\nUsage:{commandPrefix}anime [XKCD Comic #]")
             else: pass
         else: pass
         
