@@ -311,7 +311,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     @commands.command(name = 'xkcd')   
     async def scholarsearch(self, ctx, *args):
         global serverSettings
-        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['scholar'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['xkcd'] != False:
             UserCancel = Exception
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
