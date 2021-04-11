@@ -94,12 +94,15 @@ async def help(ctx, *args):
         commandPrefix = Sudo.printPrefix(ctx)
         args = list(args)
         
-        embed = discord.Embed(title="Help")
+        embed = discord.Embed(title="Help", 
+            description="Search.io is a bot that searches through multiple search engines/APIs.\nIt is developed by ACEslava#9735, K1NG#6219, and Nanu#3294")
+        
         embed.add_field(name="Administration", inline=False, value=textwrap.dedent(f"""\
             `  sudo:` Various admin commands. Usage: {commandPrefix}sudo [command] [args].
             `  logs:` DMs a .csv of personal logs or guild logs if user is a sudoer. Usage: {commandPrefix}log
             `config:` Views the guild settings. Requires sudo privileges to edit settings
         """))
+        
         embed.add_field(name="Search Engines", inline=False, value=textwrap.dedent(f"""\
             {"`wikipedia:` Search through Wikipedia." if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
             {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
@@ -405,7 +408,7 @@ class SearchEngines(commands.Cog, name="Search Engines"):
     async def xkcdsearch(self, ctx, *args):
         global serverSettings
         UserCancel = Exception
-        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['mal'] != False:
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['xkcd'] != False:
             if not args: #checks if search is empty
                 await ctx.send("Enter search query or cancel") #if empty, asks user for search query
                 try:
