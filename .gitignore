@@ -1,5 +1,5 @@
 *.env
-env/
+.venv/
 .vscode/
 __pycache__/
 startserver
@@ -8,3 +8,4 @@ logs.csv
 serverSettings.json
 scholar.log
 __pycache__/
+.python-version

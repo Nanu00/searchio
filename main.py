@@ -2,12 +2,14 @@ from src.wikipedia import WikipediaSearch
 from src.google import GoogleSearch
 from src.myanimelist import MyAnimeListSearch
 from src.googlereverseimages import ImageSearch
+from src.loadingmessage import LoadingMessage
 from src.utils import Sudo, Log, ErrorHandler
 from src.scholar import ScholarSearch
 from src.youtube import YoutubeSearch
+from src.xkcd import XKCDSearch
 from dotenv import load_dotenv
 from discord.ext import commands
-import discord, os, asyncio, json, textwrap
+import discord, os, asyncio, json, textwrap, difflib
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -35,19 +37,24 @@ async def on_guild_join(guild):
 
     owner = await bot.fetch_user(guild.owner_id)
     dm = await owner.create_dm()
+    appInfo = await bot.application_info()
+
     embed = discord.Embed(title=f"Search.io was added to your server: '{guild.name}'.", 
         description = f"""
     Search.io is a bot that searches through multiple search engines/APIs.
     The activation command is '&', and a list of various commands can be found using '&help'.
             
     A list of admin commands can be found by using '&help sudo'. These commands may need ID numbers, which requires Developer Mode.
-    To turn on Developer Mode, go to Settings > Appearances > Advanced > Developer Mode. Then right click on users, roles, or channels to copy ID.
-
-    As a start, it is suggested to designate an administrator role that can use Search.io's sudo commands. Do '&sudo adminrole [roleID]' to designate an admin role.
-    It is also suggested to turn on Safe Search, if needed. Do '&sudo safesearch [on/off]'. The default is off. 
+    To turn on Developer Mode, go to Settings > Appearances > Advanced > Developer Mode. Then right click on users, roles, channels, or guilds to copy their ID.
     If you need to block a specific user from using Search.io, do '&sudo blacklist [userID]'. Unblock with '&sudo whitelist [userID]'
 
-    If you have any problems with Search.io, DM ACEslava#9735""")
+    Guild-specific settings can be accessed with '&config'
+    As a start, it is suggested to designate an administrator role that can use Search.io's sudo commands. Do '&config adminrole [roleID]' to designate an admin role.
+    You can change the command prefix with '&config prefix [character]'
+    You can also block or unblock specific commands with '&config [command]'
+    It is also suggested to turn on Safe Search, if needed. Do '&config safesearch'. The default is off. 
+
+    If you have any problems with Search.io, DM {str(appInfo.owner)}""")
     await dm.send(embed=embed)
     return
 
@@ -87,12 +94,15 @@ async def help(ctx, *args):
         commandPrefix = Sudo.printPrefix(ctx)
         args = list(args)
         
-        embed = discord.Embed(title="Help")
+        embed = discord.Embed(title="Help", 
+            description="Search.io is a bot that searches through multiple search engines/APIs.\nIt is developed by ACEslava#9735, K1NG#6219, and Nanu#3294")
+        
         embed.add_field(name="Administration", inline=False, value=textwrap.dedent(f"""\
             `  sudo:` Various admin commands. Usage: {commandPrefix}sudo [command] [args].
             `  logs:` DMs a .csv of personal logs or guild logs if user is a sudoer. Usage: {commandPrefix}log
             `config:` Views the guild settings. Requires sudo privileges to edit settings
         """))
+        
         embed.add_field(name="Search Engines", inline=False, value=textwrap.dedent(f"""\
             {"`wikipedia:` Search through Wikipedia." if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
             {"` wikilang:` Lists supported languages for Wikipedia's --lang flag" if serverSettings[ctx.guild.id]['wikipedia'] == True else ''}
@@ -100,7 +110,8 @@ async def help(ctx, *args):
             {"`    image:` Google's Reverse Image Search with an image URL or image reply" if serverSettings[ctx.guild.id]['google'] == True else ''}
             {"`  scholar:` Search through Google Scholar" if serverSettings[ctx.guild.id]['scholar'] == True else ''}
             {"`  youtube:` Search through Youtube" if serverSettings[ctx.guild.id]['youtube'] == True else ''}
-            {"`      mal:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
+            {"`    anime:` Search through MyAnimeList" if serverSettings[ctx.guild.id]['mal'] == True else ''}
+            {"`     xkcd:` Search for XKCD comics" if serverSettings[ctx.guild.id]['xkcd'] == True else ''}
         """))
         embed.set_footer(text=f"Do {commandPrefix}help [command] for more information")
 
@@ -165,6 +176,9 @@ async def help(ctx, *args):
             elif args[0] == 'anime':
                 embed = discord.Embed(title="MyAnimeList", description=
                 f"Searches through MyAnimeList\nUsage:{commandPrefix}anime [query]")
+            elif args[0] == 'xkcd':
+                embed = discord.Embed(title="XKCD", description=
+                f"Searches for an XKCD comic\nUsage:{commandPrefix}anime [XKCD Comic #]")
             else: pass
         else: pass
         
@@ -247,10 +261,43 @@ class SearchEngines(commands.Cog, name="Search Engines"):
             else: 
                 args = list(args)
                 userquery = ' '.join(args).strip() #turns multiword search into single string.
+            
+            continueLoop = True
+            
+            while continueLoop==True:
+                try:
+                    message = await ctx.send(f'{LoadingMessage()} <a:loading:829119343580545074>')
+                    messageEdit = asyncio.create_task(self.bot.wait_for('message_edit', check=lambda var, m: m.author == ctx.author, timeout=60))
+                    search = asyncio.create_task(GoogleSearch.search(bot, ctx, serverSettings, message, userquery))
+                    #checks for message edit
+                    waiting = [messageEdit, search]
+                    done, waiting = await asyncio.wait(waiting, return_when=asyncio.FIRST_COMPLETED) # 30 seconds wait either reply or react
 
-            search = GoogleSearch(bot, ctx, serverSettings, userquery)
-            await search.search()
-            return
+                    if messageEdit in done:
+                        if type(messageEdit.exception()) == asyncio.TimeoutError:
+                            raise asyncio.TimeoutError
+                        await message.delete()
+                        messageEdit.cancel()
+                        search.cancel()
+
+                        messageEdit = messageEdit.result()
+                        userquery = messageEdit[1].content.replace('&google ', '')
+                        continue
+                    else: raise asyncio.TimeoutError
+                
+                except asyncio.TimeoutError: 
+                    await message.clear_reactions()
+                    messageEdit.cancel()
+                    search.cancel()
+                    continueLoop = False
+                    return
+                
+                except asyncio.CancelledError:
+                    pass
+                
+                except Exception as e:
+                    await ErrorHandler(bot, ctx, e, 'google', userquery)
+                    return
 
     @commands.command(name='image')
     async def image(self, ctx, *args):
@@ -308,32 +355,6 @@ class SearchEngines(commands.Cog, name="Search Engines"):
             await search.search()
             return
 
-    @commands.command(name = 'xkcd')   
-    async def scholarsearch(self, ctx, *args):
-        global serverSettings
-        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['xkcd'] != False:
-            UserCancel = Exception
-            if not args: #checks if search is empty
-                await ctx.send("Enter search query or cancel") #if empty, asks user for search query
-                try:
-                    userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
-                    userquery = userquery.content
-                    if userquery.lower() == 'cancel': raise UserCancel
-                
-                except asyncio.TimeoutError:
-                    await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
-
-                except UserCancel:
-                    await ctx.send('Aborting')
-            else:
-                args = ' '.join(list(args)).strip().split('--') #turns entire command into list split by flag operator
-                userquery = args[0].strip()
-                del args[0]
-
-            search = xkcdSearch(bot, ctx, args, userquery)
-            await search.search()
-            return
-
     @commands.command(name = 'youtube')
     async def ytsearch(self, ctx, *args):
         global serverSettings
@@ -383,6 +404,28 @@ class SearchEngines(commands.Cog, name="Search Engines"):
             await search.search()
             return
 
+    @commands.command(name = 'xkcd')
+    async def xkcdsearch(self, ctx, *args):
+        global serverSettings
+        UserCancel = Exception
+        if ctx.author.id not in serverSettings[ctx.guild.id]['blacklist'] and serverSettings[ctx.guild.id]['xkcd'] != False:
+            if not args: #checks if search is empty
+                await ctx.send("Enter search query or cancel") #if empty, asks user for search query
+                try:
+                    userquery = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout = 30) # 30 seconds to reply
+                    userquery = userquery.content
+                    if userquery.lower() == 'cancel': raise UserCancel
+                
+                except asyncio.TimeoutError:
+                    await ctx.send(f'{ctx.author.mention} Error: You took too long. Aborting') #aborts if timeout
+
+                except UserCancel:
+                    await ctx.send('Aborting')
+            else: 
+                userquery = ' '.join(args).strip() #turns multiword search into single string
+            
+            await XKCDSearch.search(bot, ctx, userquery)
+            return
 class Administration(commands.Cog, name="Administration"):
     def __init__(self, bot):
         self.bot = bot

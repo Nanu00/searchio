@@ -1,8 +1,6 @@
 from youtube_search import YoutubeSearch as ytsearch
-import discord
-import asyncio
-from src.log import commandlog
-import random 
+from src.utils import Log, ErrorHandler
+import discord, asyncio, random
 
 class YoutubeSearch:
     def __init__(
@@ -15,27 +13,20 @@ class YoutubeSearch:
         self.bot = bot
         self.ctx = ctx
     
-    async def search(self):
-        msg = []
-        async with self.ctx.typing():
-            try:
-                await asyncio.sleep(random.uniform(0,2))
-                result = ytsearch(self.searchQuery, max_results=10).to_dict()
-                resultTitles = [video['title'] for video in result]
-            
-            except Exception as e:
-                await self.ctx.send(f"Error: {e}\nAborted.")
-                return
+    async def search(self): 
+        try:
+            msg = []
+            await asyncio.sleep(random.uniform(0,2))
+            result = ytsearch(self.searchQuery, max_results=10).to_dict()
+            resultTitles = [video['title'] for video in result]
 
-            log = commandlog(self.ctx, "ytsearch", self.searchQuery)
-            log.appendToLog()
-            
+            Log.appendToLog(self.ctx, "ytsearch", self.searchQuery)
+        
             embed=discord.Embed(title=f"Titles matching '{self.searchQuery}':", description=
                 ''.join([f'[{index}]: {value}\n' for index, value in enumerate(resultTitles)]))
             embed.set_footer(text=f"Requested by {self.ctx.author}")
             msg.append(await self.ctx.send(embed=embed))
             msg.append(await self.ctx.send('Please choose option [0-9]'))
-        try:
             while True: 
                 input = await self.bot.wait_for('message', check=lambda m: m.author == self.ctx.author, timeout=30)
                 await input.delete()
@@ -48,8 +39,7 @@ class YoutubeSearch:
                     continue
                 else:
                     result = result[int(input.content)]
-                    log = commandlog(self.ctx, "ytsearch", result['title'])
-                    log.appendToLog()
+                    Log.appendToLog(self.ctx, "ytsearch", result['title'])
 
                     for message in msg:
                         await message.delete()
@@ -79,17 +69,7 @@ class YoutubeSearch:
                         await searchresult.clear_reactions()
                     
                     except Exception as e:
-                        log = commandlog(self.ctx, "scholar error", f"{str(e)}")
-                        log.appendToLog()
-
-                        searchresult.delete()
-                        
-                        if e:
-                            await self.ctx.send(f"Error: {e}\nAborted.")
-                        else:
-                            await self.ctx.send(f"Error: Unknown\nAborted.")
-
-                    finally: return
+                        await searchresult.delete()
 
         except UserCancel as e:
             await self.ctx.send(f"Cancelled")
@@ -98,17 +78,10 @@ class YoutubeSearch:
         except asyncio.TimeoutError:
             await self.ctx.send(f"Search timed out. Aborting")
             return
-        
-        except Exception as e:
-            log = commandlog(self.ctx, "youtube error", f"{str(e)}")
-            log.appendToLog()
-            
-            if e:
-                await self.ctx.send(f"Error: {e}\nAborted.")
 
-            else:
-                await self.ctx.send(f"Error: Unknown\nAborted.")
-            return
+        except Exception as e:
+            await ErrorHandler(self.bot, self.ctx, e, 'youtube', self.searchQuery)
+        finally: return
 
 class UserCancel(Exception):
     pass
