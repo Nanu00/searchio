@@ -27,7 +27,7 @@ class Sudo:
             serverSettings[serverID]['sudoer'] = []
         if 'safesearch' not in serverSettings[serverID].keys():
             serverSettings[serverID]['safesearch'] = False
-        for searchEngines in ['wikipedia', 'scholar', 'google', 'mal', 'youtube']:
+        for searchEngines in ['wikipedia', 'scholar', 'google', 'mal', 'youtube', 'xkcd']:
             if searchEngines not in serverSettings[serverID].keys():
                 serverSettings[serverID][searchEngines] = True
         
@@ -162,14 +162,15 @@ class Sudo:
                     `Safesearch:` {'✅' if self.serverSettings[self.ctx.guild.id]['safesearch'] == True else '❌'}
                     `    Prefix:` {self.serverSettings[self.ctx.guild.id]['commandprefix']}""")
                 embed.add_field(name="Search Engines", value=f"""
-                    `Wikipedia:` {'✅' if self.serverSettings[self.ctx.guild.id]['wikipedia'] == True else '❌'}
-                    `  Scholar:` {'✅' if self.serverSettings[self.ctx.guild.id]['scholar'] == True else '❌'}
                     `   Google:` {'✅' if self.serverSettings[self.ctx.guild.id]['google'] == True else '❌'}
                     `      MAL:` {'✅' if self.serverSettings[self.ctx.guild.id]['mal'] == True else '❌'}
+                    `  Scholar:` {'✅' if self.serverSettings[self.ctx.guild.id]['scholar'] == True else '❌'}
+                    `Wikipedia:` {'✅' if self.serverSettings[self.ctx.guild.id]['wikipedia'] == True else '❌'}
+                    `     XKCD:` {'✅' if self.serverSettings[self.ctx.guild.id]['xkcd'] == True else '❌'}
                     `  Youtube:` {'✅' if self.serverSettings[self.ctx.guild.id]['youtube'] == True else '❌'}""")
                 embed.set_footer(text=f"Do {self.printPrefix(self.serverSettings)}config [setting] to change a specific setting")
                 await self.ctx.send(embed=embed)
-            elif args[0].lower() in ['wikipedia', 'scholar', 'google', 'myanimelist', 'youtube', 'safesearch']:
+            elif args[0].lower() in ['wikipedia', 'scholar', 'google', 'myanimelist', 'youtube', 'safesearch', 'xkcd']:
                 embed = discord.Embed(title=args[0].capitalize(), description=f"{'✅' if self.serverSettings[self.ctx.guild.id][args[0].lower()] == True else '❌'}")
                 embed.set_footer(text=f"React with ✅/❌ to enable/disable")
                 message = await self.ctx.send(embed=embed)
@@ -219,13 +220,17 @@ class Sudo:
                             done, waiting = await asyncio.wait(waiting, return_when=asyncio.FIRST_COMPLETED) # 30 seconds wait either reply or react
 
                             if messageEdit in done:
+                                reply.cancel()
                                 messageEdit = messageEdit.result()
                                 response = ''.join([li for li in difflib.ndiff(messageEdit[0].content, messageEdit[1].content) if '+' in li]).replace('+ ', '')
                             elif reply in done:
+                                messageEdit.cancel()
                                 reply = reply.result()
                                 await reply.delete()
                                 
                                 if reply.content == "cancel":
+                                    messageEdit.cancel()
+                                    reply.cancel()
                                     break
                                 else: response = reply.content
                             await errorMsg.delete()
